@@ -208,18 +208,36 @@
       }
 
       .price-circle {
-        display: inline-block;
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
         width: 64px;
         height: 64px;
         border-radius: 50%;
         background-color: var(--color-primary);
         color: white;
         text-align: center;
-        line-height: 64px;
         font-weight: bold;
-        font-size: 1.4em;
+        font-size: 1.1em;
+        line-height: 1.1;
         margin-left: 10px;
         flex-shrink: 0;
+        box-sizing: border-box;
+        padding: 2px 0; /* Ajout d'un léger padding pour améliorer le centrage */
+        position: relative; /* Ajout pour positionner la contenance de manière absolue */
+      }
+
+      .price-circle > div:last-child {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 0.6em !important;
+        font-weight: normal !important;
+        padding: 2px 6px;
+        white-space: nowrap;
+        z-index: 10;
       }
 
       .link-button {
@@ -286,7 +304,8 @@
           flex-direction: column;
           align-items: stretch;
         }
-        .filter-btn, .sort-btn {
+        .filter-btn,
+        .sort-btn {
           width: 100%;
           margin-bottom: 5px;
         }
@@ -305,6 +324,16 @@
         }
         h1 {
           font-size: 1.8em;
+        }
+        .price-circle {
+          width: 50px;
+          height: 50px;
+          font-size: 0.9em;
+        }
+        .price-circle > div:last-child {
+          font-size: 0.5em !important;
+          bottom: 8px;
+          padding: 1px 5px;
         }
       }
     </style>
@@ -341,16 +370,20 @@
       // Fonction pour lire et parser le fichier CSV
       async function loadCSVData() {
         try {
-          const response = await fetch('chogan.csv');
+          const response = await fetch(
+            'https://docs.google.com/spreadsheets/d/e/2PACX-1vRWkEn3roOziU4Hb1piZSYuxGUVSjHCx1ggeERvV07kyRhpX4OreKdwr8KzRv-zCu4JOT_7CUCM9iYH/pub?gid=0&single=true&output=csv'
+          );
           if (!response.ok) {
             throw new Error(`Erreur HTTP! status: ${response.status}`);
           }
           const text = await response.text();
           const lines = text.split('\n');
 
-          // Extraire l'en-tête
-          const headers = lines[0].split(',').map((header) => header.trim());
+          // Extraire l'en-tête (utilise parseCSVLine pour gérer les guillemets éventuels)
+          if (lines.length === 0) return;
+          const headers = parseCSVLine(lines[0]);
           console.log({ headers });
+
           // Parser chaque ligne
           for (let i = 1; i < lines.length; i++) {
             const line = lines[i].trim();
@@ -360,7 +393,10 @@
             const obj = {};
 
             for (let j = 0; j < headers.length; j++) {
-              obj[headers[j]] = values[j] ? values[j].trim() : '';
+              // Nettoyage des clés et valeurs
+              const key = headers[j] ? headers[j].trim() : `col_${j}`;
+              const val = values[j] ? values[j].trim() : '';
+              obj[key] = val;
             }
 
             perfumeData.push(obj);
@@ -372,11 +408,11 @@
           // Afficher un message d'erreur dans la grille
           const grid = document.getElementById('product-grid');
           grid.innerHTML =
-            '<div style="grid-column: 1 / -1; text-align: center; padding: 50px; color: red; font-size: 1.5em; font-weight: bold;">ERREUR: Impossible de charger le fichier CSV. Veuillez vérifier que "chogan.csv" existe dans le même répertoire.</div>';
+            '<div style="grid-column: 1 / -1; text-align: center; padding: 50px; color: red; font-size: 1.5em; font-weight: bold;">ERREUR: Impossible de charger les données depuis Google Sheets. Veuillez vérifier votre connexion internet.</div>';
         }
       }
 
-      // Fonction pour parser une ligne CSV (gère les virgules dans les champs)
+      // Fonction pour parser une ligne CSV (gère les virgules dans les champs et les guillemets)
       function parseCSVLine(line) {
         const result = [];
         let current = '';
@@ -387,6 +423,7 @@
 
           if (char === '"') {
             inQuotes = !inQuotes;
+            current += char; // Garder les guillemets pour l'instant
           } else if (char === ',' && !inQuotes) {
             result.push(current);
             current = '';
@@ -394,9 +431,17 @@
             current += char;
           }
         }
-
         result.push(current);
-        return result;
+
+        // Nettoyer les guillemets entourant les valeurs (standard CSV)
+        return result.map((val) => {
+          val = val.trim();
+          if (val.startsWith('"') && val.endsWith('"')) {
+            // Enlever les guillemets de début et de fin, et remplacer les doubles guillemets par un simple
+            return val.substring(1, val.length - 1).replace(/""/g, '"');
+          }
+          return val;
+        });
       }
 
       // --- 2. FONCTIONS JAVASCRIPT ---
@@ -421,6 +466,55 @@
             ? product['Lien Image']
             : 'https://via.placeholder.com/150x150?text=Image+Non+Trouvée'; // Placeholder visuel
 
+        // --- GESTION DES PRIX ET CONTENANCES ---
+        // Détecter dynamiquement toutes les colonnes de contenance dans le produit
+        let availableSizes = [];
+
+        // Parcourir toutes les propriétés du produit pour trouver les contenances
+        for (const key in product) {
+          // Vérifier si la clé correspond à un format de contenance (ex: "70 ml", "50ml", "100 ml", etc.)
+          if (
+            key &&
+            typeof key === 'string' &&
+            (key.match(/^\d+\s*ml$/i) || key.match(/^\d+ml$/i)) && // Format: nombre + ml
+            product[key] &&
+            product[key].trim() !== ''
+          ) {
+            // Extraire le nombre de la contenance pour le tri
+            const sizeValue = parseInt(key.replace(/\s+/g, '').replace('ml', ''));
+            availableSizes.push({ size: key, sizeValue: sizeValue, price: product[key].trim() });
+          }
+        }
+
+        // Trier par taille décroissante pour l'affichage (70ml, 50ml, 30ml, 15ml)
+        availableSizes.sort((a, b) => {
+          return b.sizeValue - a.sizeValue; // Décroissant
+        });
+
+        let mainPrice = '-';
+        let mainSize = '';
+        let sizesHtml = '';
+
+        if (availableSizes.length > 0) {
+          // La "plus grande contenance dispo" est la première du tableau trié (décroissant)
+          const largestSize = availableSizes[0];
+          mainPrice = largestSize.price;
+          mainSize = largestSize.size;
+
+          // Construction de la liste des prix en dessous
+          sizesHtml =
+            '<div style="margin-top: 10px; padding-top: 5px; border-top: 1px dashed #eee; font-size: 0.9em;">';
+          availableSizes.forEach((item) => {
+            const isLargest = item.size === largestSize.size;
+            const style = isLargest ? 'font-weight: bold; color: var(--color-primary);' : 'color: #555;';
+            sizesHtml += `<div style="display: flex; justify-content: space-between; margin-bottom: 2px; ${style}">
+                                <span>${item.size}</span>
+                                <span>${item.price}</span>
+                              </div>`;
+          });
+          sizesHtml += '</div>';
+        }
+
         // HTML de la carte
         return `
                 <div class="product-card" 
@@ -437,16 +531,19 @@
 
                     <div class="card-content">
                         <h3 style="margin-top: 0; margin-bottom: 15px;">${product.Nom || 'N/A'}</h3>
-                        <div style="display: flex; align-items: flex-start;">
+                        <div style="display: flex; align-items: center;">
                             <div style="flex: 1;">
-                                <p><strong>Type :</strong> ${product.Type}</p>
-                                <p><strong>Gamme :</strong> ${product.Gamme || 'N/A'}</p>
-                                <p><strong>Contenance :</strong> ${product.Contenance || 'N/A'}</p>
+                                <p style="font-size: 0.7em;">Type :<strong> ${product.Type}</strong></p>
+                                <p style="font-size: 0.7em;">Gamme :<strong> ${product.Gamme || 'N/A'}</strong></p>
                             </div>
                             <div style="display: flex; align-items: center; justify-content: center;">
-                                <div class="price-circle">${product.Prix || ''}</div>
+                                <div class="price-circle">
+                                    <div>${mainPrice}</div>
+                                    <div style="font-size: 0.6em; font-weight: normal;">${mainSize}</div>
+                                </div>
                             </div>
                         </div>
+                        ${sizesHtml}
                     </div>
 
                     <!--
@@ -496,7 +593,6 @@
         filteredData.forEach((product) => {
           grid.innerHTML += createCardHTML(product);
         });
-
       }
 
       // --- 3. ÉVÉNEMENTS (Interaction Utilisateur) ---
@@ -719,16 +815,19 @@
               }
               
               .price-circle {
-                display: inline-block;
+                display: inline-flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
                 width: 64px;
                 height: 64px;
                 border-radius: 50%;
                 background-color: #d9371c;
                 color: white;
                 text-align: center;
-                line-height: 64px;
                 font-weight: bold;
-                font-size: 1.4em;
+                font-size: 1.1em;
+                line-height: 1.1;
                 margin-left: 10px;
                 flex-shrink: 0;
               }
