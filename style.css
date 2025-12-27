@@ -1,0 +1,331 @@
+/* --- STYLE (CSS) --- */
+:root {
+  --color-primary: #d9371c; /* Rouge/Orange vif, inspiré du logo */
+  --color-secondary: #f2b705; /* Jaune/Or, inspiré du logo */
+  --color-background: #fafafa;
+  --color-text-dark: #333;
+  --grid-gap: 20px;
+  --cards-per-row: 5; /* PARAMÈTRE : Nombre de cartes par ligne (3 par défaut) */
+}
+
+body {
+  font-family: 'Arial', sans-serif; /* Police par défaut */
+  background-color: var(--color-background);
+  color: var(--color-text-dark);
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  color: var(--color-primary);
+  font-size: 2.5em;
+  margin-bottom: 30px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Zone de Contrôle (Filtres et Paramètres) --- */
+#controls {
+  background-color: #fff;
+  border: 2px solid var(--color-secondary);
+  padding: 15px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 30px;
+  gap: 15px;
+}
+
+#controls > div {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.filter-btn {
+  background-color: #ddd;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  font-weight: bold;
+}
+
+.sort-btn {
+  background-color: #ddd;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  font-weight: bold;
+}
+
+.filter-btn.active,
+.sort-btn.active {
+  background-color: var(--color-primary);
+  color: white;
+  transform: scale(1.05);
+}
+
+#items-per-row-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+#items-per-row {
+  width: 60px;
+  padding: 5px;
+  border: 1px solid var(--color-primary);
+  border-radius: 5px;
+  text-align: center;
+}
+
+/* --- Grille des Produits --- */
+#product-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cards-per-row), 1fr);
+  gap: var(--grid-gap);
+}
+
+.product-card {
+  background-color: white;
+  border: 1px solid #eee;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+  background: linear-gradient(135deg, var(--color-secondary), var(--color-primary));
+  padding: 10px 0;
+  color: white;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.card-image-container {
+  height: 180px; /* Hauteur fixe pour les images */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.card-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain; /* Assure que l'image rentre sans être coupée */
+  border-radius: 5px;
+}
+
+.product-number {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background-color: rgba(217, 55, 28, 0.8); /* var(--color-primary) avec transparence */
+  color: white;
+  font-size: 0.9em;
+  font-weight: bold;
+  padding: 3px 8px;
+  border-radius: 10px;
+  z-index: 2;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.product-number.Homme {
+  background-color: #003366; /* Bleu ciel */
+  color: white;
+}
+
+.product-number.Femme {
+  background-color: #b56576; /* Rose */
+  color: white;
+}
+
+.product-number.Mixte {
+  background-color: #355e3b; /* Violet */
+  color: white;
+}
+
+.product-number.Enfant {
+  background-color: #808080; /* Gris */
+  color: white;
+}
+
+.card-content {
+  padding: 15px;
+  flex-grow: 1;
+  text-align: left;
+}
+
+.card-content h3 {
+  font-size: 1.4em;
+  color: var(--color-primary);
+  margin-top: 0;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+}
+
+.card-content p {
+  margin: 3px 0;
+  font-size: 0.95em;
+}
+
+.card-footer {
+  padding: 15px;
+  border-top: 1px dashed #eee;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.price {
+  font-size: 1.3em;
+  color: var(--color-primary);
+  font-weight: bold;
+}
+
+.price-circle {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  color: white;
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.1em;
+  line-height: 1.1;
+  margin-left: 10px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  padding: 2px 0; /* Ajout d'un léger padding pour améliorer le centrage */
+  position: relative; /* Ajout pour positionner la contenance de manière absolue */
+}
+
+.price-circle > div:last-child {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.6em !important;
+  font-weight: normal !important;
+  padding: 2px 6px;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+.link-button {
+  display: inline-block;
+  background-color: var(--color-secondary);
+  color: var(--color-text-dark);
+  padding: 8px 15px;
+  text-decoration: none;
+  border-radius: 5px;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+.link-button:hover {
+  background-color: #e6a705;
+}
+
+.product-type-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 15px;
+  font-size: 0.85em;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.product-type-tag.Homme {
+  background-color: #3498db; /* Bleu */
+}
+
+.product-type-tag.Femme {
+  background-color: #e91e63; /* Rose */
+}
+
+.product-type-tag.Mixte,
+.product-type-tag.Enfant {
+  background-color: #9b59b6; /* Violet */
+}
+
+/* Styles pour les écrans larges */
+@media (min-width: 1200px) {
+  :root {
+    --cards-per-row: 6;
+  }
+}
+
+/* Styles pour les tablettes */
+@media (max-width: 1024px) {
+  :root {
+    --cards-per-row: 4;
+  }
+  h1 {
+    font-size: 2em;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --cards-per-row: 3;
+  }
+  #controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filter-btn,
+  .sort-btn {
+    width: 100%;
+    margin-bottom: 5px;
+  }
+  #items-per-row-container {
+    justify-content: center;
+  }
+}
+
+/* Styles pour les petits écrans */
+@media (max-width: 480px) {
+  :root {
+    --cards-per-row: 2;
+  }
+  body {
+    padding: 10px;
+  }
+  h1 {
+    font-size: 1.8em;
+  }
+  .price-circle {
+    width: 50px;
+    height: 50px;
+    font-size: 0.9em;
+  }
+  .price-circle > div:last-child {
+    font-size: 0.5em !important;
+    bottom: 8px;
+    padding: 1px 5px;
+  }
+}
