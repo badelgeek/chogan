@@ -229,11 +229,18 @@ function createCardHTML(product) {
                data-is-homme="${isHomme}"
                data-is-femme="${isFemme}"
                data-product-number="${product['n°']}"
+               data-brand="${product[':']}"
+               data-name="${product.Nom}"
+               data-gamme="${product.Gamme}"
+               data-image-url="${imageUrl}"
                ${publicPrice100ml ? `data-public-price-100ml="${publicPrice100ml}"` : ''}>
 
               <div class="card-image-container">
                   <div class="product-number ${product.Type}">n° ${product['n°']}</div>
                   <img src="${imageUrl}" alt="${transformedProductName}" class="card-image">
+                  <button class="add-to-cart-btn" data-product-number="${product['n°']}">
+                    <span class="material-icons">add</span>
+                  </button>
               </div>
 
               <div class="card-content">
@@ -268,51 +275,8 @@ function createCardHTML(product) {
       `;
 }
 
-// Fonction pour afficher les produits
-function renderProducts() {
-  grid.innerHTML = ''; // Vider la grille
-
-  // 1. Filtrage
-  const filteredData = perfumeData.filter((product) => {
-    if (currentFilter === 'all') return true;
-    if (currentFilter === 'Homme') return product.Type.includes('Homme') || product.Type.includes('Mixte');
-    if (currentFilter === 'Femme') return product.Type.includes('Femme') || product.Type.includes('Mixte');
-    return false;
-  });
-
-  // 2. Tri (par marque, nom ou numéro)
-  filteredData.sort((a, b) => {
-    if (currentSort === 'brand') {
-      // Tri par marque (colonne ':') en utilisant les données originales
-      const brandCompare = (a[':'] || '').localeCompare(b[':'] || '');
-      if (brandCompare !== 0) {
-        return brandCompare;
-      }
-      // Si les marques sont identiques, tri par nom original
-      return (a.Nom || '').localeCompare(b.Nom || '');
-    } else if (currentSort === 'name') {
-      // Tri par nom (colonne 'Nom') en utilisant les données originales
-      return (a.Nom || '').localeCompare(b.Nom || '');
-    } else if (currentSort === 'number') {
-      // Tri par numéro (colonne 'n°')
-      // Convertir les numéros en nombres pour un tri correct
-      const numA = parseInt(a['n°']) || 0;
-      const numB = parseInt(b['n°']) || 0;
-      return numA - numB;
-    }
-    return 0;
-  });
-
-  // 3. Affichage
-  filteredData.forEach((product) => {
-    grid.innerHTML += createCardHTML(product);
-  });
-
-  // Attacher les événements de sélection de taille après le rendu
-  setTimeout(() => {
-    attachSizeSelectionEvents();
-  }, 100);
-}
+// Fonction renderProducts redéfinie plus bas avec les fonctionnalités de mise en évidence du panier
+// Voir ligne 1039 pour la version complète avec mise en évidence des articles ajoutés au panier
 
 // --- 3. ÉVÉNEMENTS (Interaction Utilisateur) ---
 
@@ -883,5 +847,213 @@ function performSearch(query) {
   // Attacher les événements de sélection de taille après le rendu
   setTimeout(() => {
     attachSizeSelectionEvents();
+  }, 100);
+}
+
+// Fonction pour attacher les événements d'ajout au panier
+document.addEventListener('DOMContentLoaded', function () {
+  // Attacher les événements d'ajout au panier
+  attachAddToCartEvents();
+
+  // Attacher l'événement au bouton du panier
+  const cartBtn = document.getElementById('cart-btn');
+  if (cartBtn) {
+    cartBtn.addEventListener('click', function() {
+      if (window.cartManager) {
+        window.cartManager.openCart();
+      }
+    });
+  }
+
+  // Mettre à jour l'affichage du panier au chargement de la page
+  if (window.cartManager) {
+    window.cartManager.updateCartDisplay();
+  }
+
+  // Démarrer la vérification périodique des changements dans le panier
+  startCartChangeMonitoring();
+});
+
+// Fonction pour démarrer la vérification périodique des changements dans le panier
+function startCartChangeMonitoring() {
+  // Vérifier les changements toutes les 2 secondes
+  setInterval(() => {
+    if (window.cartManager) {
+      window.cartManager.checkCartChanges();
+    }
+  }, 2000);
+}
+
+function attachAddToCartEvents() {
+  // Utiliser event delegation pour gérer les boutons ajoutés dynamiquement
+  document.getElementById('product-grid').addEventListener('click', function(e) {
+    if (e.target.closest('.add-to-cart-btn')) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const addToCartBtn = e.target.closest('.add-to-cart-btn');
+      const productNumber = addToCartBtn.getAttribute('data-product-number');
+      const productCard = addToCartBtn.closest('.product-card');
+      
+      // Récupérer les informations du produit
+      const product = {
+        'n°': productCard.getAttribute('data-product-number'),
+        ':': productCard.getAttribute('data-brand'),
+        Nom: productCard.getAttribute('data-name'),
+        Gamme: productCard.getAttribute('data-gamme'),
+        Type: productCard.getAttribute('data-type'),
+        'Lien Image': productCard.getAttribute('data-image-url'),
+        selectedSize: 'N/A', // On récupérera la taille sélectionnée
+        selectedPrice: 'N/A' // On récupérera le prix sélectionné
+      };
+      
+      // Trouver la taille sélectionnée dans la carte
+      const selectedSizeOption = productCard.querySelector('.size-option.selected');
+      if (selectedSizeOption) {
+        product.selectedSize = selectedSizeOption.getAttribute('data-size');
+        product.selectedPrice = selectedSizeOption.getAttribute('data-price');
+      } else {
+        // Si aucune taille n'est sélectionnée, prendre la première disponible
+        const firstSizeOption = productCard.querySelector('.size-option');
+        if (firstSizeOption) {
+          product.selectedSize = firstSizeOption.getAttribute('data-size');
+          product.selectedPrice = firstSizeOption.getAttribute('data-price');
+        } else {
+          // Si aucune taille n'est disponible, utiliser les valeurs par défaut
+          const priceValueElement = productCard.querySelector('.price-value');
+          if (priceValueElement) {
+            product.selectedPrice = priceValueElement.textContent;
+          }
+        }
+      }
+      
+      // Ajouter au panier
+      if (window.cartManager) {
+        window.cartManager.addToCart(product);
+        
+        // Animation d'ajout
+        addToCartAnimation(addToCartBtn);
+        
+        // Mettre à jour la mise en évidence de la carte
+        updateCardHighlight(productCard, product['n°'], product.selectedSize);
+      }
+    }
+  });
+}
+
+// Fonction pour animer l'ajout au panier
+function addToCartAnimation(btn) {
+  btn.style.transform = 'scale(0.9)';
+  btn.style.backgroundColor = '#4CAF50';
+  
+  setTimeout(() => {
+    btn.style.transform = 'scale(1)';
+    btn.style.backgroundColor = 'var(--color-secondary)';
+  }, 300);
+}
+
+// Fonction pour mettre à jour la mise en évidence de la carte
+function updateCardHighlight(card, productNumber, selectedSize) {
+  // Vérifier si le produit avec cette taille est dans le panier
+  if (window.cartManager && window.cartManager.cart) {
+    const isInCart = window.cartManager.cart.some(item => 
+      item.id === productNumber && item.selectedSize === selectedSize
+    );
+    
+    if (isInCart) {
+      card.classList.add('in-cart');
+    } else {
+      card.classList.remove('in-cart');
+    }
+  }
+}
+
+// Fonction pour mettre à jour la mise en évidence de toutes les cartes
+function updateAllCardsHighlight() {
+  const cards = document.querySelectorAll('.product-card');
+  cards.forEach(card => {
+    const productNumber = card.getAttribute('data-product-number');
+    // Pour chaque taille disponible dans la carte, vérifier si elle est dans le panier
+    const sizeOptions = card.querySelectorAll('.size-option');
+    let isAnySizeInCart = false;
+    
+    if (sizeOptions.length > 0) {
+      // Vérifier chaque taille disponible
+      sizeOptions.forEach(option => {
+        const size = option.getAttribute('data-size');
+        if (window.cartManager && window.cartManager.cart) {
+          const isInCart = window.cartManager.cart.some(item => 
+            item.id === productNumber && item.selectedSize === size
+          );
+          if (isInCart) {
+            isAnySizeInCart = true;
+          }
+        }
+      });
+    } else {
+      // Si aucune taille spécifique n'est disponible, vérifier avec le prix affiché
+      if (window.cartManager && window.cartManager.cart) {
+        const isInCart = window.cartManager.cart.some(item => 
+          item.id === productNumber
+        );
+        if (isInCart) {
+          isAnySizeInCart = true;
+        }
+      }
+    }
+    
+    if (isAnySizeInCart) {
+      card.classList.add('in-cart');
+    } else {
+      card.classList.remove('in-cart');
+    }
+  });
+}
+
+// Mettre à jour la fonction renderProducts pour inclure la mise en évidence
+function renderProducts() {
+  grid.innerHTML = ''; // Vider la grille
+
+  // 1. Filtrage
+  const filteredData = perfumeData.filter((product) => {
+    if (currentFilter === 'all') return true;
+    if (currentFilter === 'Homme') return product.Type.includes('Homme') || product.Type.includes('Mixte');
+    if (currentFilter === 'Femme') return product.Type.includes('Femme') || product.Type.includes('Mixte');
+    return false;
+  });
+
+  // 2. Tri (par marque, nom ou numéro)
+  filteredData.sort((a, b) => {
+    if (currentSort === 'brand') {
+      // Tri par marque (colonne ':') en utilisant les données originales
+      const brandCompare = (a[':'] || '').localeCompare(b[':'] || '');
+      if (brandCompare !== 0) {
+        return brandCompare;
+      }
+      // Si les marques sont identiques, tri par nom original
+      return (a.Nom || '').localeCompare(b.Nom || '');
+    } else if (currentSort === 'name') {
+      // Tri par nom (colonne 'Nom') en utilisant les données originales
+      return (a.Nom || '').localeCompare(b.Nom || '');
+    } else if (currentSort === 'number') {
+      // Tri par numéro (colonne 'n°')
+      // Convertir les numéros en nombres pour un tri correct
+      const numA = parseInt(a['n°']) || 0;
+      const numB = parseInt(b['n°']) || 0;
+      return numA - numB;
+    }
+    return 0;
+  });
+
+  // 3. Affichage
+  filteredData.forEach((product) => {
+    grid.innerHTML += createCardHTML(product);
+  });
+
+  // Attacher les événements de sélection de taille après le rendu
+  setTimeout(() => {
+    attachSizeSelectionEvents();
+    // Mettre à jour les mises en évidence après le rendu
+    updateAllCardsHighlight();
   }, 100);
 }

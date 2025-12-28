@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Catalogue CHOGAN</title>
+    <title>Panier - Catalogue CHOGAN</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Tenor+Sans&display=swap" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="normalize.css" />
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="cart-style.css" />
@@ -16,38 +16,40 @@
     <header class="topbar">
       <div class="topbar-content">
         <div>
-          <h2>Fragrances d'Inspiration</h2>
+          <h2>Votre Panier</h2>
           <h3 class="subtitle">by Sublime Factory</h3>
-        </div>
-        <div class="search-wrapper">
-          <input type="text" class="search-input" placeholder="Rechercher un parfum..." />
         </div>
       </div>
     </header>
 
     <div class="main-content">
-      <div id="product-grid"></div>
+      <div id="cart-container">
+        <div id="cart-items"></div>
+        <div id="cart-summary">
+          <button id="checkout-btn" class="checkout-btn">Passer Commande</button>
+          <div class="cart-total">
+            <h3>Total: <span id="total-price">0,00 €</span></h3>
+          </div>
+          <button id="continue-shopping" class="continue-shopping-btn">Continuer les achats</button>
+        </div>
+      </div>
     </div>
 
     <footer class="bottombar">
       <div class="bottombar-content">
         <div class="filter-buttons">
-          <button class="filter-btn active" data-filter="all">
-            <span class="material-icons">filter_alt</span>
-            <span>TOUT</span>
+          <button class="filter-btn" onclick="location.href='index.html'">
+            <span class="material-icons">arrow_back</span>
+            <span>RETOUR</span>
           </button>
-          <button class="filter-btn" data-filter="Homme">
-            <span class="material-icons">man</span>
-            <span>Homme</span>
+          <button class="filter-btn" id="cart-btn-bottom">
+            <span class="material-icons">shopping_cart</span>
+            <span>PANIER</span>
+            <span class="cart-count" id="cart-count-bottom">0</span>
           </button>
-          <button class="filter-btn" data-filter="Femme">
-            <span class="material-icons">woman</span>
-            <span>Femme</span>
-          </button>
-          <button class="filter-btn" id="cart-btn">
-            <span class="material-icons" id="cart-icon">shopping_cart</span>
-            <span>Panier</span>
-            <span class="cart-count" id="cart-count">0</span>
+          <button class="filter-btn" id="clear-cart">
+            <span class="material-icons">delete</span>
+            <span>VIDER</span>
           </button>
         </div>
         <div class="sort-select">
@@ -61,6 +63,6 @@
     </footer>
 
     <script src="cart.js"></script>
-    <script src="script.js"></script>
+    <script src="cart-page.js"></script>
   </body>
 </html>

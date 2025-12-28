@@ -173,6 +173,30 @@ body {
   font-size: 0.65rem;
 }
 
+.cart-count {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background-color: #ff6b6b;
+  color: white;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 0.7rem;
+  display: none; /* Caché par défaut, affiché quand il y a des articles */
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 22px;
+  font-weight: bold;
+  z-index: 10; /* S'assurer que la pastille est au-dessus des autres éléments */
+}
+
+/* Ajustement pour le bouton du panier dans la bottom bar */
+.filter-btn {
+  position: relative; /* Permettre le positionnement absolu de la pastille */
+}
+
 .sort-select {
   display: flex;
   align-items: center;
@@ -307,7 +331,7 @@ body {
 .product-number {
   position: absolute;
   top: 15px;
-  right: 15px;
+  left: 15px;
   background-color: rgba(217, 55, 28, 0.8); /* var(--color-primary) avec transparence */
   color: white;
   font-size: 0.9em;
@@ -316,6 +340,40 @@ body {
   border-radius: 10px;
   z-index: 2;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.add-to-cart-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background-color: var(--color-secondary);
+  color: var(--color-text-dark);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.add-to-cart-btn:hover {
+  transform: scale(1.1);
+  background-color: #e6a705;
+}
+
+.add-to-cart-btn .material-icons {
+  font-size: 20px;
+}
+
+/* Style pour les cartes ajoutées au panier */
+.product-card.in-cart {
+  border: 3px solid #ff6b6b; /* Bordure rouge pour les articles dans le panier */
+  box-shadow: 0 8px 20px rgba(255, 107, 107, 0.3);
 }
 
 .product-number.Homme {
