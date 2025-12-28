@@ -16,7 +16,6 @@ async function loadCSVData() {
     // Extraire l'en-tête (utilise parseCSVLine pour gérer les guillemets éventuels)
     if (lines.length === 0) return;
     const headers = parseCSVLine(lines[0]);
-    console.log({ headers });
 
     // Parser chaque ligne
     for (let i = 1; i < lines.length; i++) {
@@ -80,6 +79,52 @@ function parseCSVLine(line) {
 
 // --- 2. FONCTIONS JAVASCRIPT ---
 
+// Function to capitalize the first letter of each word in a string
+function capitalizeWords(str) {
+  if (!str) return str;
+  return str.toLowerCase().replace(/\b\w/g, (match) => match.toUpperCase()); // Remplace la première lettre de chaque mot
+}
+
+// Function to replace 'g' with '9', 'E' with '3', 'i' with '1', and 'o' with '0' in each word
+// Only for brand and product name, not for gamme
+// Case insensitive, one type of replacement per word (replace all occurrences of the first found character type)
+function transformWord(word) {
+  if (!word) return word;
+
+  // Split by spaces to handle multi-word strings
+  const words = word.split(' ');
+
+  return words
+    .map((w) => {
+      if (!w) return w;
+
+      // Check for each character type and replace all occurrences of the first found type
+      // Look for g/G first
+      if (w.search(/[gG]/i) !== -1) {
+        return w.replace(/[gG]/gi, '9');
+      }
+
+      // Look for E/e next
+      if (w.search(/[eE]/) !== -1) {
+        return w.replace(/[eE]/g, '3');
+      }
+
+      // Look for i/I next
+      if (w.search(/[iI]/) !== -1) {
+        return w.replace(/[iI]/gi, '1');
+      }
+
+      // Look for o/O last
+      if (w.search(/[oO]/i) !== -1) {
+        return w.replace(/[oO]/gi, '0');
+      }
+
+      // If no characters to replace, return original word
+      return w;
+    })
+    .join(' ');
+}
+
 const grid = document.getElementById('product-grid');
 const filterButtons = document.querySelectorAll('.filter-btn[data-filter]');
 const sortButtons = document.querySelectorAll('.sort-btn');
@@ -125,59 +170,93 @@ function createCardHTML(product) {
     return b.sizeValue - a.sizeValue; // Décroissant
   });
 
-  let mainPrice = '-';
-  let mainSize = '';
-  let sizesHtml = '';
+  const largestSize = availableSizes[0];
+  const mainPrice = largestSize.price;
+  const mainSize = largestSize.size;
 
+  // Générer les options de taille pour le sélecteur
+  let sizeOptionsHtml = '';
   if (availableSizes.length > 0) {
-    // La "plus grande contenance dispo" est la première du tableau trié (décroissant)
-    const largestSize = availableSizes[0];
-    mainPrice = largestSize.price;
-    mainSize = largestSize.size;
-
-    // Construction de la liste des prix en dessous
-    sizesHtml =
-      '<div style="margin-top: 10px; padding-top: 5px; border-top: 1px dashed #eee; font-size: 0.9em;">';
-    availableSizes.forEach((item) => {
-      const isLargest = item.size === largestSize.size;
-      const style = isLargest ? 'font-weight: bold; color: var(--color-primary);' : 'color: #555;';
-      sizesHtml += `<div style="display: flex; justify-content: space-between; margin-bottom: 2px; ${style}">
-                          <span>${item.size}</span>
-                          <span>${item.price}</span>
-                        </div>`;
+    availableSizes.forEach((item, index) => {
+      const isSelected = index === 0; // La première (plus grande) est sélectionnée par défaut
+      sizeOptionsHtml += `
+        <div class="size-option ${isSelected ? 'selected' : ''}" data-size="${item.size}" data-price="${item.price}">
+          <div class="size-value">${item.size}</div>
+        </div>`;
     });
-    sizesHtml += '</div>';
   }
+
+  // Gestion du prix public (basé sur 100ml)
+  const publicPrice100ml =
+    product['Prix public 100ml'] && product['Prix public 100ml'].trim() !== '' ? product['Prix public 100ml'] : null;
+
+  // Convertir le prix public 100ml en nombre pour les calculs
+  let publicPriceValue = null;
+  if (publicPrice100ml) {
+    // Extraire la valeur numérique du prix (ex: "35,00 €" -> 35.00)
+    const priceStr = publicPrice100ml.replace(' €', '').replace(',', '.');
+    publicPriceValue = parseFloat(priceStr);
+  }
+
+  // Calculer le prix public pour la taille sélectionnée (proportionnellement)
+  let displayedPublicPrice = null;
+  if (publicPriceValue && largestSize) {
+    const selectedSizeValue = largestSize.sizeValue; // Valeur en ml de la taille sélectionnée
+    // Calculer le prix proportionnellement: (prix_100ml * taille_selectionnee) / 100
+    const calculatedPrice = (publicPriceValue * selectedSizeValue) / 100;
+    displayedPublicPrice = calculatedPrice.toFixed(2).replace('.', ',') + ' €';
+  }
+
+  const publicPriceHtml = displayedPublicPrice
+    ? `<div class="public-price-container">
+         <div class="public-price-label">PRIX ORIGINAL</div>
+         <div class="public-price-value">${displayedPublicPrice}</div>
+       </div>`
+    : '<div></div>';
+
+  // Capitaliser le nom du produit
+  const productName = capitalizeWords(product.Nom || 'N/A');
+
+  // Apply transformation to brand and product name only (not gamme)
+  const transformedBrand = transformWord((product[':'] || 'N/A').toUpperCase());
+  const transformedProductName = transformWord(productName);
 
   // HTML de la carte
   return `
           <div class="product-card"
                data-type="${product.Type}"
                data-is-homme="${isHomme}"
-               data-is-femme="${isFemme}">
-
-              <div class="card-header">${product[':']}</div>
+               data-is-femme="${isFemme}"
+               data-product-number="${product['n°']}"
+               ${publicPrice100ml ? `data-public-price-100ml="${publicPrice100ml}"` : ''}>
 
               <div class="card-image-container">
                   <div class="product-number ${product.Type}">n° ${product['n°']}</div>
-                  <img src="${imageUrl}" alt="${product.Nom}" class="card-image">
+                  <img src="${imageUrl}" alt="${transformedProductName}" class="card-image">
               </div>
 
               <div class="card-content">
-                  <h3 style="margin-top: 0; margin-bottom: 15px;">${product.Nom || 'N/A'}</h3>
-                  <div style="display: flex; align-items: center;">
-                      <div style="flex: 1;">
-                          <p style="font-size: 0.7em;">Type :<strong> ${product.Type}</strong></p>
-                          <p style="font-size: 0.7em;">Gamme :<strong> ${product.Gamme || 'N/A'}</strong></p>
-                      </div>
-                      <div style="display: flex; align-items: center; justify-content: center;">
-                          <div class="price-circle">
-                              <div>${mainPrice}</div>
-                              <div style="font-size: 0.6em; font-weight: normal;">${mainSize}</div>
-                          </div>
-                      </div>
+                  <div class="card-content-main">
+                      <div class="product-brand">${transformedBrand}</div>
+                      <div style="margin-top: 0; margin-bottom: 4px;">${transformedProductName}</div>
+                      <div class="product-info">${capitalizeWords(product.Gamme)} - ${product.Type}</div>
                   </div>
-                  ${sizesHtml}
+
+                  <!-- Sélecteur de tailles -->
+                  <div class="size-selector">
+                    ${sizeOptionsHtml}
+                  </div>
+
+                  <!-- Conteneur de prix -->
+                  <div class="price-container">
+                    ${publicPriceHtml}
+                    <div class="price-circle-container">
+                      <div class="price-circle">
+                        <div class="price-label">PRIX</div>
+                        <div class="price-value">${mainPrice}</div>
+                      </div>
+                    </div>
+                  </div>
               </div>
 
               <!--
@@ -203,16 +282,16 @@ function renderProducts() {
   // 2. Tri (par marque, nom ou numéro)
   filteredData.sort((a, b) => {
     if (currentSort === 'brand') {
-      // Tri par marque (colonne ':') puis par nom (colonne 'Nom')
-      const brandCompare = a[':'].localeCompare(b[':']);
+      // Tri par marque (colonne ':') en utilisant les données originales
+      const brandCompare = (a[':'] || '').localeCompare(b[':'] || '');
       if (brandCompare !== 0) {
         return brandCompare;
       }
-      // Si les marques sont identiques, tri par nom
-      return a.Nom.localeCompare(b.Nom);
+      // Si les marques sont identiques, tri par nom original
+      return (a.Nom || '').localeCompare(b.Nom || '');
     } else if (currentSort === 'name') {
-      // Tri par nom (colonne 'Nom')
-      return a.Nom.localeCompare(b.Nom);
+      // Tri par nom (colonne 'Nom') en utilisant les données originales
+      return (a.Nom || '').localeCompare(b.Nom || '');
     } else if (currentSort === 'number') {
       // Tri par numéro (colonne 'n°')
       // Convertir les numéros en nombres pour un tri correct
@@ -227,6 +306,11 @@ function renderProducts() {
   filteredData.forEach((product) => {
     grid.innerHTML += createCardHTML(product);
   });
+
+  // Attacher les événements de sélection de taille après le rendu
+  setTimeout(() => {
+    attachSizeSelectionEvents();
+  }, 100);
 }
 
 // --- 3. ÉVÉNEMENTS (Interaction Utilisateur) ---
@@ -286,16 +370,16 @@ function printCards() {
   // Appliquer le même tri que sur l'écran
   printData.sort((a, b) => {
     if (currentSort === 'brand') {
-      // Tri par marque (colonne ':') puis par nom (colonne 'Nom')
-      const brandCompare = a[':'].localeCompare(b[':']);
+      // Tri par marque (colonne ':') en utilisant les données originales
+      const brandCompare = (a[':'] || '').localeCompare(b[':'] || '');
       if (brandCompare !== 0) {
         return brandCompare;
       }
-      // Si les marques sont identiques, tri par nom
-      return a.Nom.localeCompare(b.Nom);
+      // Si les marques sont identiques, tri par nom original
+      return (a.Nom || '').localeCompare(b.Nom || '');
     } else if (currentSort === 'name') {
-      // Tri par nom (colonne 'Nom')
-      return a.Nom.localeCompare(b.Nom);
+      // Tri par nom (colonne 'Nom') en utilisant les données originales
+      return (a.Nom || '').localeCompare(b.Nom || '');
     } else if (currentSort === 'number') {
       // Tri par numéro (colonne 'n°')
       // Convertir les numéros en nombres pour un tri correct
@@ -413,13 +497,13 @@ function printCards() {
           background-color: #808080; /* Gris */
           color: white;
         }
-        
+
         .card-content {
           padding: 15px;
           flex-grow: 1;
           text-align: left;
         }
-        
+
         .card-content h3 {
           font-size: 1.4em;
           color: #d9371c;
@@ -427,12 +511,12 @@ function printCards() {
           margin-bottom: 5px;
           text-transform: uppercase;
         }
-        
+
         .card-content p {
           margin: 3px 0;
           font-size: 0.95em;
         }
-        
+
         .card-footer {
           padding: 15px;
           border-top: 1px dashed #eee;
@@ -441,13 +525,13 @@ function printCards() {
           align-items: center;
           gap: 10px;
         }
-        
+
         .price {
           font-size: 1.3em;
           color: #d9371c;
           font-weight: bold;
         }
-        
+
         .price-circle {
           display: inline-flex;
           flex-direction: column;
@@ -465,7 +549,7 @@ function printCards() {
           margin-left: 10px;
           flex-shrink: 0;
         }
-        
+
         .product-type-tag {
           display: inline-block;
           padding: 4px 10px;
@@ -476,20 +560,54 @@ function printCards() {
           margin-bottom: 10px;
           text-transform: uppercase;
         }
-        
+
         .product-type-tag.Homme {
           background-color: #3498db; /* Bleu */
         }
-        
+
         .product-type-tag.Femme {
           background-color: #e91e63; /* Rose */
         }
-        
+
         .product-type-tag.Mixte,
         .product-type-tag.Enfant {
           background-color: #9b59b6; /* Violet */
         }
-        
+
+        /* Styles pour les options de taille */
+        .size-selector {
+          position: absolute;
+          bottom: 15px;
+          right: 15px;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 5px;
+          z-index: 3;
+        }
+
+        .size-option {
+          background-color: #f8f8f8;
+          border: 1px solid #ddd;
+          border-radius: 15px;
+          padding: 5px 10px;
+          font-size: 0.8em;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          min-width: 60px;
+        }
+
+        .size-option.selected {
+          background-color: #d9371c;
+          color: white;
+          border-color: #d9371c;
+        }
+
+        .size-option .size-value {
+          font-weight: bold;
+        }
+
         @media print {
           .page-break {
             page-break-before: always;
@@ -521,5 +639,183 @@ function printCards() {
   };
 }
 
+// Fonction pour mettre à jour le prix affiché en fonction de la sélection
+function updatePriceDisplay(cardElement, selectedSize, selectedPrice) {
+  const priceValueElement = cardElement.querySelector('.price-value');
+  const publicPriceValueElement = cardElement.querySelector('.public-price-value');
+  const publicPriceLabelElement = cardElement.querySelector('.public-price-label');
+
+  if (priceValueElement) {
+    priceValueElement.textContent = selectedPrice;
+  }
+
+  // Mettre à jour le prix public proportionnellement si disponible
+  if (publicPriceValueElement && publicPriceLabelElement) {
+    // Récupérer le prix public 100ml à partir de l'attribut de données ou du label
+    const originalPublicPrice100ml = cardElement.getAttribute('data-public-price-100ml');
+    if (originalPublicPrice100ml) {
+      // Extraire la taille sélectionnée (ex: "50ml" -> 50)
+      const sizeValue = parseInt(selectedSize.replace(/\s+/g, '').replace('ml', ''));
+
+      // Convertir le prix public 100ml en nombre
+      const publicPrice100mlValue = parseFloat(originalPublicPrice100ml.replace(' €', '').replace(',', '.'));
+
+      // Calculer le prix public proportionnellement
+      if (!isNaN(publicPrice100mlValue) && !isNaN(sizeValue)) {
+        const calculatedPrice = (publicPrice100mlValue * sizeValue) / 100;
+        const formattedPrice = calculatedPrice.toFixed(2).replace('.', ',') + ' €';
+        publicPriceValueElement.textContent = formattedPrice;
+      }
+    }
+  }
+}
+
+// Fonction pour gérer les événements de sélection de taille
+function attachSizeSelectionEvents() {
+  // Détacher les événements précédents pour éviter les doublons
+  document.querySelectorAll('.size-option').forEach((option) => {
+    option.removeEventListener('click', handleSizeSelection);
+    option.addEventListener('click', handleSizeSelection);
+  });
+}
+
+// Gestionnaire d'événement pour la sélection de taille
+function handleSizeSelection(event) {
+  const sizeOption = event.currentTarget;
+  const cardElement = sizeOption.closest('.product-card');
+
+  // Désélectionner toutes les options de taille dans cette carte
+  cardElement.querySelectorAll('.size-option').forEach((option) => {
+    option.classList.remove('selected');
+  });
+
+  // Sélectionner l'option cliquée
+  sizeOption.classList.add('selected');
+
+  // Récupérer les données de l'option sélectionnée
+  const selectedSize = sizeOption.getAttribute('data-size');
+  const selectedPrice = sizeOption.getAttribute('data-price');
+
+  // Mettre à jour le prix affiché
+  updatePriceDisplay(cardElement, selectedSize, selectedPrice);
+}
+
 // Initialisation : Charger les données du CSV et afficher les produits
 loadCSVData();
+
+// Attacher les événements de sélection de taille après le chargement des produits
+document.addEventListener('DOMContentLoaded', function () {
+  // Utiliser une MutationObserver pour détecter les changements dans la grille
+  const grid = document.getElementById('product-grid');
+  if (grid) {
+    const observer = new MutationObserver(function (mutations) {
+      mutations.forEach(function (mutation) {
+        if (mutation.type === 'childList') {
+          // Attacher les événements aux nouvelles cartes ajoutées
+          setTimeout(() => {
+            attachSizeSelectionEvents();
+          }, 100); // Petit délai pour s'assurer que le DOM est complètement mis à jour
+        }
+      });
+    });
+
+    observer.observe(grid, { childList: true, subtree: true });
+  }
+
+  // Ajouter la fonctionnalité de recherche
+  const searchInput = document.querySelector('.search-input');
+
+  if (searchInput) {
+    // Recherche au fur et à mesure de la saisie
+    searchInput.addEventListener('input', function () {
+      performSearch(this.value);
+    });
+  }
+});
+
+// Fonction de recherche
+function performSearch(query) {
+  query = query.toLowerCase().trim();
+
+  // Si la recherche est vide, afficher tous les produits
+  if (!query) {
+    renderProducts();
+    return;
+  }
+
+  // Filtrer les produits en fonction de la recherche
+  const filteredData = perfumeData.filter((product) => {
+    // Vérifier si le terme de recherche correspond à un nom, une marque, une gamme ou un numéro
+    // Check both original and transformed versions
+    const originalName = product.Nom && product.Nom.toLowerCase();
+    const originalBrand = product[':'] && product[':'].toLowerCase();
+    const originalGamme = product.Gamme && capitalizeWords(product.Gamme).toLowerCase();
+
+    const transformedName = transformWord(product.Nom || '').toLowerCase();
+    const transformedBrand = transformWord((product[':'] || '').toUpperCase()).toLowerCase();
+    const transformedGamme = capitalizeWords(product.Gamme || '').toLowerCase(); // Don't transform gamme
+
+    const matchesName =
+      (originalName && originalName.includes(query)) || (transformedName && transformedName.includes(query));
+    const matchesBrand =
+      (originalBrand && originalBrand.includes(query)) || (transformedBrand && transformedBrand.includes(query));
+    const matchesGamme =
+      (originalGamme && originalGamme.includes(query)) || (transformedGamme && transformedGamme.includes(query)); // Include gamme in search too
+    const matchesNumber = product['n°'] && product['n°'].toString().includes(query);
+
+    // Vérifier si le terme de recherche correspond à une contenance ou un prix
+    let matchesSizeOrPrice = false;
+    for (const key in product) {
+      if (key && typeof key === 'string' && (key.match(/^\d+\s*ml$/i) || key.match(/^\d+ml$/i))) {
+        // Vérifier la contenance
+        if (key.toLowerCase().includes(query)) {
+          matchesSizeOrPrice = true;
+          break;
+        }
+        // Vérifier le prix
+        if (product[key] && product[key].toString().toLowerCase().includes(query)) {
+          matchesSizeOrPrice = true;
+          break;
+        }
+      }
+    }
+
+    return matchesName || matchesBrand || matchesGamme || matchesNumber || matchesSizeOrPrice;
+  });
+
+  // Afficher les produits filtrés
+  grid.innerHTML = ''; // Vider la grille
+
+  // Appliquer le tri actuel aux résultats filtrés
+  filteredData.sort((a, b) => {
+    if (currentSort === 'brand') {
+      // Tri par marque (colonne ':') en utilisant les données originales
+      const brandCompare = (a[':'] || '').localeCompare(b[':'] || '');
+      if (brandCompare !== 0) {
+        return brandCompare;
+      }
+      // Si les marques sont identiques, tri par nom original
+      return (a.Nom || '').localeCompare(b.Nom || '');
+    } else if (currentSort === 'name') {
+      // Tri par nom (colonne 'Nom') en utilisant les données originales
+      return (a.Nom || '').localeCompare(b.Nom || '');
+    } else if (currentSort === 'number') {
+      // Tri par numéro (colonne 'n°')
+      // Convertir les numéros en nombres pour un tri correct
+      const numA = parseInt(a['n°']) || 0;
+      const numB = parseInt(b['n°']) || 0;
+      return numA - numB;
+    }
+    return 0;
+  });
+
+  // Afficher les produits filtrés et triés
+  filteredData.forEach((product) => {
+    grid.innerHTML += createCardHTML(product);
+  });
+
+  // Attacher les événements de sélection de taille après le rendu
+  setTimeout(() => {
+    attachSizeSelectionEvents();
+  }, 100);
+}

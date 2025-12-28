@@ -1,30 +1,107 @@
 /* --- STYLE (CSS) --- */
 :root {
-  --color-primary: #d9371c; /* Rouge/Orange vif, inspiré du logo */
+  --color-primary: #ebc0bf; /* Rouge/Orange vif, inspiré du logo */
   --color-secondary: #f2b705; /* Jaune/Or, inspiré du logo */
-  --color-background: #fafafa;
+  --color-background: #eeeeee;
   --color-text-dark: #333;
+  --color-text-light: #666;
   --grid-gap: 20px;
   --cards-per-row: 5; /* PARAMÈTRE : Nombre de cartes par ligne (3 par défaut) */
+  --topbar-height: 60px;
+  --search-height: 60px;
 }
 
 body {
-  font-family: 'Arial', sans-serif; /* Police par défaut */
+  font-family: 'Tenor Sans', sans-serif;
   background-color: var(--color-background);
   color: var(--color-text-dark);
-  padding: 20px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-h1 {
-  text-align: center;
-  color: var(--color-primary);
-  font-size: 2.5em;
-  margin-bottom: 30px;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+/* Topbar styles */
+.topbar {
+  height: var(--topbar-height);
+  background: var(--color-primary);
+  color: white;
+  z-index: 1000;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0; /* Prevents the topbar from shrinking */
+  font-family: 'Tenor Sans', sans-serif;
+}
+
+.topbar-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+  padding: 0 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Search wrapper in topbar */
+.topbar .search-wrapper {
+  max-width: 400px;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin-left: 20px;
+  padding: 5px 0; /* Add some vertical padding instead of fixed height */
+}
+
+.topbar .search-input {
+  flex-grow: 1;
+  padding: 8px 15px;
+  border: 2px solid white;
+  border-radius: 30px;
+  font-size: 0.9em;
+  outline: none;
+  background-color: white;
+  color: var(--color-text-dark);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.subtitle {
+  font-size: 0.7em;
+}
+
+.topbar nav ul {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 20px;
+}
+
+.topbar nav a {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  transition: opacity 0.2s;
+}
+
+.topbar nav a:hover {
+  opacity: 0.8;
+}
+
+/* Main content area with scroll */
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Tenor Sans', sans-serif;
+  margin-top: 0;
 }
 
 /* --- Zone de Contrôle (Filtres et Paramètres) --- */
+
 #controls {
+  font-size: 0.7rem;
   background-color: #fff;
   border: 2px solid var(--color-secondary);
   padding: 15px;
@@ -33,8 +110,9 @@ h1 {
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
   gap: 15px;
+  flex-shrink: 0; /* Prevents controls from shrinking */
 }
 
 #controls > div {
@@ -100,6 +178,7 @@ h1 {
   display: flex;
   flex-direction: column;
   text-align: center;
+  min-width: 180px;
 }
 
 .product-card:hover {
@@ -107,20 +186,12 @@ h1 {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
-.card-header {
-  background: linear-gradient(135deg, var(--color-secondary), var(--color-primary));
-  padding: 10px 0;
-  color: white;
-  font-weight: bold;
-  text-transform: uppercase;
-}
-
 .card-image-container {
   height: 180px; /* Hauteur fixe pour les images */
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 10px;
+  padding: 8px;
   overflow: hidden;
   position: relative;
 }
@@ -170,19 +241,37 @@ h1 {
   padding: 15px;
   flex-grow: 1;
   text-align: left;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-content .product-brand {
+  font-size: 0.7rem;
+  color: var(--color-text-light);
+  letter-spacing: 1px;
+}
+
+.card-content .product-info {
+  font-size: 0.6rem;
+  color: var(--color-text-light);
+  margin-bottom: 8px;
 }
 
 .card-content h3 {
-  font-size: 1.4em;
-  color: var(--color-primary);
+  font-size: 1.2em;
+  color: var(--color-text-dark);
   margin-top: 0;
   margin-bottom: 5px;
-  text-transform: uppercase;
 }
 
 .card-content p {
   margin: 3px 0;
   font-size: 0.95em;
+}
+
+/* Container for the main content except price */
+.card-content-main {
+  flex-grow: 1;
 }
 
 .card-footer {
@@ -194,43 +283,66 @@ h1 {
   gap: 10px;
 }
 
-.price {
-  font-size: 1.3em;
-  color: var(--color-primary);
-  font-weight: bold;
+.price-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-end;
+  margin-top: 10px;
 }
 
 .price-circle {
-  display: inline-flex;
+  display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background-color: var(--color-primary);
-  color: white;
-  text-align: center;
-  font-weight: bold;
-  font-size: 1.1em;
-  line-height: 1.1;
-  margin-left: 10px;
-  flex-shrink: 0;
-  box-sizing: border-box;
-  padding: 2px 0; /* Ajout d'un léger padding pour améliorer le centrage */
-  position: relative; /* Ajout pour positionner la contenance de manière absolue */
+  align-items: flex-end;
+  font-weight: 800;
+  font-size: 1.4em;
+  position: relative;
 }
 
-.price-circle > div:last-child {
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.6em !important;
-  font-weight: normal !important;
-  padding: 2px 6px;
-  white-space: nowrap;
-  z-index: 10;
+.price-label {
+  font-size: 0.6rem;
+  opacity: 0.5;
+  margin-bottom: 2px;
+}
+
+.price-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.price-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.price-circle-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.public-price-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  margin-right: 15px;
+}
+
+.public-price-label {
+  font-size: 0.5rem;
+  opacity: 0.7;
+  margin-bottom: 2px;
+}
+
+.public-price-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #888;
 }
 
 .link-button {
@@ -272,6 +384,85 @@ h1 {
   background-color: #9b59b6; /* Violet */
 }
 
+/* Nouveau design pour les alternatives de contenance */
+.size-selector {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 24px;
+}
+
+.size-option {
+  background-color: #f8f8f8;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.8em;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  opacity: 0.6;
+}
+
+.size-option:hover {
+  background-color: #e9e9e9;
+  border-color: var(--color-primary);
+}
+
+.size-option.selected {
+  border-color: var(--color-primary);
+  opacity: 1;
+}
+
+.size-option .size-value {
+  font-weight: bold;
+}
+
+/* Styles for search in topbar on different screen sizes */
+@media (min-width: 769px) {
+  .topbar .search-wrapper {
+    max-width: 400px;
+    margin-left: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .topbar {
+    height: auto; /* Allow topbar to grow with content */
+    padding-bottom: 10px;
+  }
+
+  .topbar-content {
+    flex-direction: column;
+    padding: 10px;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .topbar .search-wrapper {
+    max-width: 100%;
+    margin-left: 0;
+    order: 2; /* Put search after the title */
+    padding: 0;
+  }
+
+  .topbar-content > div:first-child {
+    order: 1;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .topbar .search-input {
+    font-size: 0.8em;
+    padding: 6px 10px;
+  }
+}
+
 /* Styles pour les écrans larges */
 @media (min-width: 1200px) {
   :root {
@@ -284,9 +475,7 @@ h1 {
   :root {
     --cards-per-row: 4;
   }
-  h1 {
-    font-size: 2em;
-  }
+  /* Original h1 from the page content - hidden */
 }
 
 @media (max-width: 768px) {
@@ -305,27 +494,64 @@ h1 {
   #items-per-row-container {
     justify-content: center;
   }
-}
 
-/* Styles pour les petits écrans */
-@media (max-width: 480px) {
-  :root {
-    --cards-per-row: 2;
+  /* Responsive styles for topbar and search */
+  .topbar-content {
+    padding: 0 10px;
   }
-  body {
-    padding: 10px;
+
+  .topbar nav ul {
+    gap: 10px;
   }
-  h1 {
-    font-size: 1.8em;
+
+  .search-wrapper {
+    padding: 5px 10px;
   }
-  .price-circle {
-    width: 50px;
-    height: 50px;
+
+  .search-input {
+    padding: 8px 10px;
     font-size: 0.9em;
   }
-  .price-circle > div:last-child {
-    font-size: 0.5em !important;
-    bottom: 8px;
-    padding: 1px 5px;
+
+  .search-button {
+    padding: 8px 15px;
+    font-size: 0.9em;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --topbar-height: 50px;
+    --search-height: 50px;
+    --cards-per-row: 2;
+  }
+
+  .topbar nav ul {
+    justify-content: center;
+  }
+
+  /* .search-wrapper {
+    flex-direction: column;
+    height: auto;
+    padding: 5px;
+    gap: 5px;
+  } */
+
+  .search-input {
+    border-radius: 30px;
+    width: 100%;
+  }
+
+  .search-button {
+    border-radius: 30px;
+    margin-top: 5px;
+  }
+
+  .main-content {
+    padding: 10px;
+  }
+
+  #controls {
+    margin-bottom: 10px;
   }
 }
