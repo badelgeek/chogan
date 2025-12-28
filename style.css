@@ -96,6 +96,99 @@ body {
   flex-direction: column;
   font-family: 'Tenor Sans', sans-serif;
   margin-top: 0;
+  padding-bottom: 80px; /* Add space for bottom bar */
+}
+
+/* Adjust padding for mobile devices */
+@media (max-width: 768px) {
+  .main-content {
+    padding-bottom: 160px; /* Increase space for bottom bar on mobile with column layout */
+  }
+}
+
+/* Bottom bar styles */
+.bottombar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 70px;
+  background: var(--color-primary);
+  color: white;
+  z-index: 1000;
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+  font-family: 'Tenor Sans', sans-serif;
+}
+
+.bottombar-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+  padding: 0 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 5px;
+}
+
+.filter-btn {
+  background-color: #f8f8f8;
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: bold;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+  gap: 3px;
+  opacity: 0.6;
+}
+
+.filter-btn:hover {
+  background-color: #e9e9e9;
+  border-color: var(--color-primary);
+}
+
+.filter-btn.active {
+  border-color: var(--color-primary);
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+.filter-btn .material-icons {
+  font-size: 18px;
+}
+
+.filter-btn span:last-child {
+  font-size: 0.65rem;
+}
+
+.sort-select {
+  display: flex;
+  align-items: center;
+}
+
+#bottom-sort-select {
+  padding: 8px 15px;
+  border: 2px solid white;
+  border-radius: 30px;
+  font-size: 0.9em;
+  outline: none;
+  background-color: white;
+  color: var(--color-text-dark);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  min-width: 180px;
 }
 
 /* --- Zone de Contrôle (Filtres et Paramètres) --- */
@@ -122,29 +215,37 @@ body {
 }
 
 .filter-btn {
-  background-color: #ddd;
-  border: none;
+  background-color: #f8f8f8;
+  border: 1px solid #ddd;
   padding: 10px 15px;
   border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.2s, transform 0.1s;
+  transition: all 0.2s;
   font-weight: bold;
+  opacity: 0.6;
 }
 
 .sort-btn {
-  background-color: #ddd;
-  border: none;
+  background-color: #f8f8f8;
+  border: 1px solid #ddd;
   padding: 10px 15px;
   border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.2s, transform 0.1s;
+  transition: all 0.2s;
   font-weight: bold;
+  opacity: 0.6;
+}
+
+.filter-btn:hover,
+.sort-btn:hover {
+  background-color: #e9e9e9;
+  border-color: var(--color-primary);
 }
 
 .filter-btn.active,
 .sort-btn.active {
-  background-color: var(--color-primary);
-  color: white;
+  border-color: var(--color-primary);
+  opacity: 1;
   transform: scale(1.05);
 }
 
@@ -178,7 +279,7 @@ body {
   display: flex;
   flex-direction: column;
   text-align: center;
-  min-width: 180px;
+  min-width: 160px;
 }
 
 .product-card:hover {
@@ -334,13 +435,13 @@ body {
 }
 
 .public-price-label {
-  font-size: 0.5rem;
+  font-size: 0.4rem;
   opacity: 0.7;
   margin-bottom: 2px;
 }
 
 .public-price-value {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: #888;
 }
@@ -390,7 +491,7 @@ body {
   flex-direction: row;
   justify-content: flex-start;
   align-items: center;
-  gap: 9px;
+  gap: 4px;
   margin-bottom: 24px;
 }
 
@@ -470,6 +571,69 @@ body {
   }
 }
 
+/* Responsive styles for bottom bar */
+@media (max-width: 768px) {
+  .bottombar {
+    height: auto;
+    padding: 10px 0;
+  }
+
+  .bottombar-content {
+    flex-direction: column;
+    gap: 10px;
+    padding: 0 10px;
+    height: auto;
+  }
+
+  .filter-buttons {
+    order: 2;
+    justify-content: center;
+  }
+
+  .sort-select {
+    order: 1;
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .filter-btn {
+    min-width: 50px;
+    padding: 6px 8px;
+  }
+
+  .filter-btn .material-icons {
+    font-size: 16px;
+  }
+
+  .filter-btn span:last-child {
+    font-size: 0.55rem;
+  }
+
+  #bottom-sort-select {
+    min-width: auto;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .filter-buttons {
+    gap: 3px;
+  }
+
+  .filter-btn {
+    min-width: 45px;
+    padding: 5px 6px;
+  }
+
+  .filter-btn .material-icons {
+    font-size: 14px;
+  }
+
+  .filter-btn span:last-child {
+    font-size: 0.5rem;
+  }
+}
+
 /* Styles pour les tablettes */
 @media (max-width: 1024px) {
   :root {
@@ -481,18 +645,6 @@ body {
 @media (max-width: 768px) {
   :root {
     --cards-per-row: 3;
-  }
-  #controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .filter-btn,
-  .sort-btn {
-    width: 100%;
-    margin-bottom: 5px;
-  }
-  #items-per-row-container {
-    justify-content: center;
   }
 
   /* Responsive styles for topbar and search */
@@ -530,13 +682,6 @@ body {
     justify-content: center;
   }
 
-  /* .search-wrapper {
-    flex-direction: column;
-    height: auto;
-    padding: 5px;
-    gap: 5px;
-  } */
-
   .search-input {
     border-radius: 30px;
     width: 100%;
@@ -548,10 +693,14 @@ body {
   }
 
   .main-content {
-    padding: 10px;
+    padding: 10px 10px 140px 10px; /* Keep bottom padding for bottom bar */
   }
 
   #controls {
     margin-bottom: 10px;
+  }
+
+  .price-value {
+    font-size: 1rem;
   }
 }

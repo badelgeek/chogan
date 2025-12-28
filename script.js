@@ -129,6 +129,7 @@ const grid = document.getElementById('product-grid');
 const filterButtons = document.querySelectorAll('.filter-btn[data-filter]');
 const sortButtons = document.querySelectorAll('.sort-btn');
 const itemsPerRowInput = document.getElementById('items-per-row');
+const bottomSortSelect = document.getElementById('bottom-sort-select');
 
 let currentFilter = 'all';
 let currentSort = 'brand'; // Default sorting by brand
@@ -315,11 +316,11 @@ function renderProducts() {
 
 // --- 3. ÉVÉNEMENTS (Interaction Utilisateur) ---
 
-// Gestion des clics sur les boutons de filtre
-filterButtons.forEach((button) => {
+// Gestion des clics sur les boutons de filtre (dans la bottom bar)
+document.querySelectorAll('.bottombar .filter-btn[data-filter]').forEach((button) => {
   button.addEventListener('click', function () {
-    // Désactiver tous les boutons de filtre
-    filterButtons.forEach((btn) => btn.classList.remove('active'));
+    // Désactiver tous les boutons de filtre dans la bottom bar
+    document.querySelectorAll('.bottombar .filter-btn').forEach((btn) => btn.classList.remove('active'));
 
     // Activer le bouton cliqué
     this.classList.add('active');
@@ -330,12 +331,59 @@ filterButtons.forEach((button) => {
   });
 });
 
+// Gestion des clics sur les boutons de tri (dans la top bar)
+if (sortButtons.length > 0) {
+  sortButtons.forEach((button) => {
+    button.addEventListener('click', function () {
+      // Désactiver tous les boutons de tri
+      sortButtons.forEach((btn) => {
+        btn.classList.remove('active');
+      });
+
+      // Activer le bouton cliqué
+      this.classList.add('active');
+
+      // Mettre à jour et redessiner
+      currentSort = this.getAttribute('data-sort');
+      // Mettre à jour le select de la bottom bar
+      if (bottomSortSelect) {
+        bottomSortSelect.value = currentSort;
+      }
+      renderProducts();
+    });
+  });
+}
+
+// Gestion du changement de tri dans le select de la bottom bar
+if (bottomSortSelect) {
+  bottomSortSelect.addEventListener('change', function () {
+    // Désactiver tous les boutons de tri dans la top bar
+    if (sortButtons.length > 0) {
+      sortButtons.forEach((btn) => {
+        btn.classList.remove('active');
+      });
+    }
+
+    // Activer le bouton correspondant dans la top bar
+    const activeSortButton = document.querySelector(`.sort-btn[data-sort="${this.value}"]`);
+    if (activeSortButton) {
+      activeSortButton.classList.add('active');
+    }
+
+    // Mettre à jour et redessiner
+    currentSort = this.value;
+    renderProducts();
+  });
+}
+
 // Gestion du changement du nombre de cartes par ligne
-itemsPerRowInput.addEventListener('change', () => {
-  const cardsPerRow = parseInt(itemsPerRowInput.value) || 3; // Fallback to 3 if input is invalid
-  document.documentElement.style.setProperty('--cards-per-row', cardsPerRow);
-  // No need to call renderProducts() as changing CSS variable will re-layout
-});
+if (itemsPerRowInput) {
+  itemsPerRowInput.addEventListener('change', () => {
+    const cardsPerRow = parseInt(itemsPerRowInput.value) || 3; // Fallback to 3 if input is invalid
+    document.documentElement.style.setProperty('--cards-per-row', cardsPerRow);
+    // No need to call renderProducts() as changing CSS variable will re-layout
+  });
+}
 
 // Gestion des clics sur les boutons de tri
 sortButtons.forEach((button) => {
@@ -705,6 +753,24 @@ loadCSVData();
 
 // Attacher les événements de sélection de taille après le chargement des produits
 document.addEventListener('DOMContentLoaded', function () {
+  // S'assurer que les boutons de filtre et le select de tri sont correctement initialisés
+  // Activer le bouton de filtre "TOUT" par défaut
+  const allFilterBtn = document.querySelector('.bottombar .filter-btn[data-filter="all"]');
+  if (allFilterBtn) {
+    allFilterBtn.classList.add('active');
+  }
+
+  // Activer le bouton de tri "Trier par Marque" par défaut
+  const brandSortBtn = document.querySelector('.sort-btn[data-sort="brand"]');
+  if (brandSortBtn) {
+    brandSortBtn.classList.add('active');
+  }
+
+  // Mettre à jour le select de tri dans la bottom bar
+  if (bottomSortSelect) {
+    bottomSortSelect.value = 'brand';
+  }
+
   // Utiliser une MutationObserver pour détecter les changements dans la grille
   const grid = document.getElementById('product-grid');
   if (grid) {

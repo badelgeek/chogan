@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Tenor+Sans&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="normalize.css" />
     <link rel="stylesheet" href="style.css" />
   </head>
@@ -24,28 +25,34 @@
     </header>
 
     <div class="main-content">
-      <div id="controls">
-        <div>
-          <button class="filter-btn active" data-filter="all">TOUT</button>
-          <button class="filter-btn" data-filter="Homme">Homme</button>
-          <button class="filter-btn" data-filter="Femme">Femme</button>
-        </div>
-        <div>
-          <button id="sort-brand" class="sort-btn active" data-sort="brand">Trier par Marque</button>
-          <button id="sort-name" class="sort-btn" data-sort="name">Trier par Nom</button>
-          <button id="sort-number" class="sort-btn" data-sort="number">Trier par Numéro</button>
-        </div>
-        <div id="items-per-row-container">
-          <label for="items-per-row">Nb/Ligne :</label>
-          <input type="number" id="items-per-row" value="5" min="1" max="6" />
-        </div>
-        <div>
-          <button id="print-btn" class="sort-btn" onclick="printCards()">Imprimer</button>
-        </div>
-      </div>
-
       <div id="product-grid"></div>
     </div>
+
+    <footer class="bottombar">
+      <div class="bottombar-content">
+        <div class="filter-buttons">
+          <button class="filter-btn active" data-filter="all">
+            <span class="material-icons">filter_alt</span>
+            <span>TOUT</span>
+          </button>
+          <button class="filter-btn" data-filter="Homme">
+            <span class="material-icons">man</span>
+            <span>Homme</span>
+          </button>
+          <button class="filter-btn" data-filter="Femme">
+            <span class="material-icons">woman</span>
+            <span>Femme</span>
+          </button>
+        </div>
+        <div class="sort-select">
+          <select id="bottom-sort-select">
+            <option value="brand">Trier par Marque</option>
+            <option value="name">Trier par Nom</option>
+            <option value="number">Trier par Numéro</option>
+          </select>
+        </div>
+      </div>
+    </footer>
 
     <script src="script.js"></script>
   </body>
