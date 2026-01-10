@@ -20,9 +20,8 @@ class CartManager {
   // Ajouter un produit au panier
   addToCart(product) {
     // Vérifier si le produit est déjà dans le panier
-    const existingItem = this.cart.find(item =>
-      item.id === product['n°'] &&
-      item.selectedSize === product.selectedSize
+    const existingItem = this.cart.find(
+      (item) => item.id === product['n°'] && item.selectedSize === product.selectedSize
     );
 
     if (existingItem) {
@@ -38,7 +37,7 @@ class CartManager {
         imageUrl: product['Lien Image'],
         selectedSize: product.selectedSize,
         selectedPrice: product.selectedPrice,
-        quantity: 1
+        quantity: 1,
       };
       this.cart.push(cartItem);
     }
@@ -50,9 +49,7 @@ class CartManager {
 
   // Retirer un produit du panier
   removeFromCart(productId, size) {
-    this.cart = this.cart.filter(item =>
-      !(item.id === productId && item.selectedSize === size)
-    );
+    this.cart = this.cart.filter((item) => !(item.id === productId && item.selectedSize === size));
     this.saveCart();
     // Mettre à jour l'état des cartes sur la page principale
     this.updateProductCardHighlight(productId, size, false);
@@ -60,9 +57,7 @@ class CartManager {
 
   // Mettre à jour la quantité d'un produit
   updateQuantity(productId, size, quantity) {
-    const item = this.cart.find(item =>
-      item.id === productId && item.selectedSize === size
-    );
+    const item = this.cart.find((item) => item.id === productId && item.selectedSize === size);
 
     if (item) {
       if (quantity <= 0) {
@@ -83,7 +78,7 @@ class CartManager {
   getTotalPrice() {
     return this.cart.reduce((total, item) => {
       const price = parseFloat(item.selectedPrice.replace(' €', '').replace(',', '.'));
-      return total + (price * item.quantity);
+      return total + price * item.quantity;
     }, 0);
   }
 
@@ -91,7 +86,7 @@ class CartManager {
   updateCartDisplay() {
     const cartIcon = document.getElementById('cart-icon');
     const cartCount = document.getElementById('cart-count');
-    
+
     if (cartCount) {
       const totalItems = this.getTotalItems();
       cartCount.textContent = totalItems;
@@ -146,7 +141,7 @@ class CartManager {
     }
 
     let cartItemsHTML = '';
-    this.cart.forEach(item => {
+    this.cart.forEach((item) => {
       const price = parseFloat(item.selectedPrice.replace(' €', '').replace(',', '.'));
       cartItemsHTML += `
         <div class="cart-item" data-id="${item.id}" data-size="${item.selectedSize}">
@@ -205,11 +200,11 @@ class CartManager {
 
     // Boutons de quantité
     const minusBtns = modal.querySelectorAll('.quantity-btn.minus');
-    minusBtns.forEach(btn => {
+    minusBtns.forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const id = e.target.getAttribute('data-id');
         const size = e.target.getAttribute('data-size');
-        const item = this.cart.find(i => i.id === id && i.selectedSize === size);
+        const item = this.cart.find((i) => i.id === id && i.selectedSize === size);
         if (item) {
           this.updateQuantity(id, size, item.quantity - 1);
           this.refreshCartDisplay();
@@ -218,11 +213,11 @@ class CartManager {
     });
 
     const plusBtns = modal.querySelectorAll('.quantity-btn.plus');
-    plusBtns.forEach(btn => {
+    plusBtns.forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const id = e.target.getAttribute('data-id');
         const size = e.target.getAttribute('data-size');
-        const item = this.cart.find(i => i.id === id && i.selectedSize === size);
+        const item = this.cart.find((i) => i.id === id && i.selectedSize === size);
         if (item) {
           this.updateQuantity(id, size, item.quantity + 1);
           this.refreshCartDisplay();
@@ -232,7 +227,7 @@ class CartManager {
 
     // Boutons de suppression
     const removeBtns = modal.querySelectorAll('.remove-item');
-    removeBtns.forEach(btn => {
+    removeBtns.forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const id = e.target.getAttribute('data-id');
         const size = e.target.getAttribute('data-size');
@@ -254,19 +249,15 @@ class CartManager {
   updateProductCardHighlight(productId, size, isInCart) {
     // Mettre à jour la carte correspondante sur la page principale
     const productCards = document.querySelectorAll(`.product-card[data-product-number="${productId}"]`);
-    productCards.forEach(card => {
+    productCards.forEach((card) => {
       // Trouver si ce produit avec cette taille est dans le panier
-      const isThisSizeInCart = this.cart.some(item =>
-        item.id === productId && item.selectedSize === size
-      );
+      const isThisSizeInCart = this.cart.some((item) => item.id === productId && item.selectedSize === size);
 
       if (isThisSizeInCart) {
         card.classList.add('in-cart');
       } else {
         // Vérifier si une autre taille de ce produit est dans le panier
-        const isAnySizeInCart = this.cart.some(item =>
-          item.id === productId
-        );
+        const isAnySizeInCart = this.cart.some((item) => item.id === productId);
 
         if (!isAnySizeInCart) {
           card.classList.remove('in-cart');
@@ -304,7 +295,7 @@ class CartManager {
   // Mettre à jour la mise en évidence de toutes les cartes
   updateAllCardsHighlight() {
     const cards = document.querySelectorAll('.product-card');
-    cards.forEach(card => {
+    cards.forEach((card) => {
       const productNumber = card.getAttribute('data-product-number');
       // Pour chaque taille disponible dans la carte, vérifier si elle est dans le panier
       const sizeOptions = card.querySelectorAll('.size-option');
@@ -312,20 +303,16 @@ class CartManager {
 
       if (sizeOptions.length > 0) {
         // Vérifier chaque taille disponible
-        sizeOptions.forEach(option => {
+        sizeOptions.forEach((option) => {
           const size = option.getAttribute('data-size');
-          const isInCart = this.cart.some(item =>
-            item.id === productNumber && item.selectedSize === size
-          );
+          const isInCart = this.cart.some((item) => item.id === productNumber && item.selectedSize === size);
           if (isInCart) {
             isAnySizeInCart = true;
           }
         });
       } else {
         // Si aucune taille spécifique n'est disponible, vérifier avec le prix affiché
-        const isInCart = this.cart.some(item =>
-          item.id === productNumber
-        );
+        const isInCart = this.cart.some((item) => item.id === productNumber);
         if (isInCart) {
           isAnySizeInCart = true;
         }
@@ -363,10 +350,13 @@ function sendOrderToWhatsApp() {
     message += `   Qté: ${item.quantity} x ${item.selectedPrice} = ${itemTotal} €\n\n`;
   });
 
-  const totalPrice = cart.reduce((total, item) => {
-    const price = parseFloat(item.selectedPrice.replace(' €', '').replace(',', '.'));
-    return total + (price * item.quantity);
-  }, 0).toFixed(2).replace('.', ',');
+  const totalPrice = cart
+    .reduce((total, item) => {
+      const price = parseFloat(item.selectedPrice.replace(' €', '').replace(',', '.'));
+      return total + price * item.quantity;
+    }, 0)
+    .toFixed(2)
+    .replace('.', ',');
 
   message += `*Total: ${totalPrice} €*\n\n`;
   message += `Merci pour votre commande !`;
@@ -375,7 +365,7 @@ function sendOrderToWhatsApp() {
   const encodedMessage = encodeURIComponent(message);
 
   // Numéro WhatsApp cible
-  const phoneNumber = '33628494751'; // +33628494751 sans le +
+  const phoneNumber = '33651310577'; // +33651310577 sans le +
 
   // Ouvrir WhatsApp avec le message pré-rempli
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
