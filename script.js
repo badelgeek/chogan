@@ -1057,3 +1057,53 @@ function renderProducts() {
     updateAllCardsHighlight();
   }, 100);
 }
+
+// Popup functionality
+document.addEventListener('DOMContentLoaded', function() {
+  // Small timeout to ensure all elements are loaded
+  setTimeout(() => {
+    const popup = document.getElementById('welcomePopup');
+    const closeBtn = document.getElementById('closePopup');
+    const ctaButton = document.querySelector('.checkout-btn');
+
+    if (!popup) {
+      console.error('Popup element not found!');
+      return;
+    }
+
+    // Check if user has visited before using localStorage
+    const hasVisited = localStorage.getItem('hasVisited');
+
+    // Show popup on first visit only
+    if (!hasVisited) {
+      // Small delay to ensure page is loaded before showing popup
+      setTimeout(() => {
+        popup.classList.add('show');
+      }, 500);
+    }
+
+    // Close popup when clicking the close button
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function() {
+        popup.classList.remove('show');
+      });
+    }
+
+    // Close popup when clicking outside the content
+    popup.addEventListener('click', function(e) {
+      if (e.target === popup) {
+        popup.classList.remove('show');
+      }
+    });
+
+    // Handle CTA button click
+    if (ctaButton) {
+      ctaButton.addEventListener('click', function(e) {
+        // Close the popup when CTA is clicked
+        popup.classList.remove('show');
+        // Mark as visited only after CTA is clicked
+        localStorage.setItem('hasVisited', 'true');
+      });
+    }
+  }, 100); // Even shorter delay to ensure elements are ready
+});

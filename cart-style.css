@@ -25,6 +25,52 @@
   z-index: 10000;
 }
 
+/* Ensure welcome popup stays hidden until JS adds .show */
+.popup-overlay.cart-modal {
+  display: none;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.popup-overlay.cart-modal.show {
+  display: flex;
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Welcome popup image: single source of truth */
+.popup-overlay .popup-body .popup-image {
+  width: 80%;
+  max-width: 400px;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  margin: 12px auto;
+}
+
+@media (max-width: 768px) {
+  .popup-overlay .popup-body .popup-image {
+    width: 80%;
+    max-width: 320px;
+  }
+}
+
+/* Keep CTA compact in the welcome popup */
+.popup-footer .checkout-btn {
+  width: auto !important;
+  min-width: 200px !important;
+  max-width: 240px !important;
+  display: inline-flex !important;
+  justify-content: center;
+  padding: 10px 20px !important;
+  text-align: center;
+}
+
+.popup-footer {
+  display: flex !important;
+  justify-content: center !important;
+}
+
 .cart-modal-content {
   background-color: white;
   border-radius: 15px;
@@ -252,7 +298,8 @@
   text-align: center;
 }
 
-.checkout-btn, .continue-shopping-btn {
+.checkout-btn,
+.continue-shopping-btn {
   display: block;
   width: 100%;
   padding: 15px;
@@ -314,7 +361,8 @@
     font-size: 0.75em;
   }
 
-  .cart-item-info { /* Cacher gamme et type sur mobile */
+  .cart-item-info {
+    /* Cacher gamme et type sur mobile */
     display: none;
   }
   /* Afficher la contenance sur mobile */

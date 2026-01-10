@@ -13,6 +13,29 @@
     <link rel="stylesheet" href="cart-style.css" />
   </head>
   <body>
+    <!-- Popup Modal -->
+    <div id="welcomePopup" class="popup-overlay cart-modal">
+      <div class="popup-content cart-modal-content">
+        <div class="cart-header">
+          <h2>La fragrance sans le marketing !</h2>
+          <button id="closePopup" class="close-cart" aria-label="Fermer">&times;</button>
+        </div>
+        <div class="cart-items popup-body">
+          <p>Saviez-vous que 80% du prix d'un parfum sert à payer le marketing ?</p>
+          <p>Chez nous, on mise tout sur la fragrance :</p>
+          <ul>
+            <li>✨ Qualité premium</li>
+            <li>💎 Flacon épuré</li>
+            <li>💰 Prix malin</li>
+          </ul>
+          <img src="images/generic-bottles.png" alt="Collection de parfums" class="popup-image" />
+        </div>
+        <div class="popup-footer">
+          <a href="#product-grid" class="checkout-btn">Découvrir la collection</a>
+        </div>
+      </div>
+    </div>
+
     <header class="topbar">
       <div class="topbar-content">
         <div>
