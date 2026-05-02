@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Catalogue CHOGAN</title>
+    <title>Catalogue Madame Parfum</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Tenor+Sans&display=swap" rel="stylesheet" />
@@ -32,6 +32,26 @@
         </div>
         <div class="popup-footer">
           <a href="#product-grid" class="checkout-btn">Découvrir la collection</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Popup pour entrer le nom -->
+    <div id="namePopup" class="popup-overlay cart-modal">
+      <div class="popup-content cart-modal-content">
+        <div class="cart-header">
+          <h2>Finaliser votre commande</h2>
+          <button id="closeNamePopup" class="close-cart" aria-label="Fermer">&times;</button>
+        </div>
+        <div class="cart-items popup-body">
+          <p>Pour finaliser votre commande, veuillez entrer votre nom :</p>
+          <input type="text" id="customerNameInput" placeholder="Votre nom" class="name-input" />
+          <p id="nameError" class="error-message" style="display: none; color: red">
+            Le nom doit contenir au moins 2 lettres.
+          </p>
+        </div>
+        <div class="popup-footer">
+          <button id="confirmNameBtn" class="checkout-btn">Confirmer</button>
         </div>
       </div>
     </div>

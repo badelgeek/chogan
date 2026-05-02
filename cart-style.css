@@ -48,6 +48,41 @@
   margin: 12px auto;
 }
 
+/* Styles pour la popup de nom */
+#namePopup .cart-modal-content {
+  width: 90%;
+  max-width: 400px;
+  height: auto; /* Hauteur automatique pour petite popup */
+  max-height: 50vh;
+  z-index: 10001; /* Plus élevé que la modale panier */
+}
+
+#namePopup {
+  z-index: 10001;
+}
+
+/* Styles pour l'input du nom */
+.name-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  margin: 10px 0;
+  box-sizing: border-box;
+}
+
+.name-input:focus {
+  outline: none;
+  border-color: #d9371c;
+  box-shadow: 0 0 0 2px rgba(217, 55, 28, 0.2);
+}
+
+.error-message {
+  font-size: 14px;
+  margin-top: 5px;
+}
+
 @media (max-width: 768px) {
   .popup-overlay .popup-body .popup-image {
     width: 80%;

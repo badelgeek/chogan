@@ -327,8 +327,63 @@ class CartManager {
   }
 }
 
+// Fonction pour afficher la popup de saisie du nom
+function showNamePopup() {
+  return new Promise((resolve, reject) => {
+    const popup = document.getElementById('namePopup');
+    const input = document.getElementById('customerNameInput');
+    const confirmBtn = document.getElementById('confirmNameBtn');
+    const closeBtn = document.getElementById('closeNamePopup');
+    const errorMsg = document.getElementById('nameError');
+
+    // Réinitialiser l'input et masquer l'erreur
+    input.value = '';
+    errorMsg.style.display = 'none';
+    popup.classList.add('show');
+
+    let isResolved = false;
+
+    const handleConfirm = () => {
+      if (isResolved) return;
+      const name = input.value.trim();
+      if (name.length >= 2) {
+        isResolved = true;
+        popup.classList.remove('show');
+        resolve(name);
+        cleanup();
+      } else {
+        errorMsg.style.display = 'block';
+      }
+    };
+
+    const handleClose = () => {
+      if (isResolved) return;
+      isResolved = true;
+      popup.classList.remove('show');
+      reject(new Error('Popup fermée sans confirmation'));
+      cleanup();
+    };
+
+    const handleOverlayClick = (e) => {
+      if (e.target === popup) {
+        handleClose();
+      }
+    };
+
+    const cleanup = () => {
+      confirmBtn.removeEventListener('click', handleConfirm);
+      closeBtn.removeEventListener('click', handleClose);
+      popup.removeEventListener('click', handleOverlayClick);
+    };
+
+    confirmBtn.addEventListener('click', handleConfirm);
+    closeBtn.addEventListener('click', handleClose);
+    popup.addEventListener('click', handleOverlayClick);
+  });
+}
+
 // Fonction pour envoyer la commande via WhatsApp
-function sendOrderToWhatsApp() {
+async function sendOrderToWhatsApp() {
   // Charger le panier depuis le localStorage
   const cart = JSON.parse(localStorage.getItem('cart')) || [];
 
@@ -337,40 +392,48 @@ function sendOrderToWhatsApp() {
     return;
   }
 
-  // Créer le message de commande
-  let message = 'Nouvelle commande:\n\n';
+  try {
+    // Demander le nom de l'utilisateur
+    const customerName = await showNamePopup();
 
-  cart.forEach((item, index) => {
-    const price = parseFloat(item.selectedPrice.replace(' €', '').replace(',', '.'));
-    const itemTotal = (price * item.quantity).toFixed(2).replace('.', ',');
+    // Créer le message de commande
+    let message = `Nouvelle commande de ${customerName}:\n\n`;
 
-    message += `${index + 1}. *${item.brand}*\n`;
-    message += `   ${item.name}\n`;
-    message += `   Réf: ${item.id} | Taille: ${item.selectedSize}\n`;
-    message += `   Qté: ${item.quantity} x ${item.selectedPrice} = ${itemTotal} €\n\n`;
-  });
-
-  const totalPrice = cart
-    .reduce((total, item) => {
+    cart.forEach((item, index) => {
       const price = parseFloat(item.selectedPrice.replace(' €', '').replace(',', '.'));
-      return total + price * item.quantity;
-    }, 0)
-    .toFixed(2)
-    .replace('.', ',');
+      const itemTotal = (price * item.quantity).toFixed(2).replace('.', ',');
 
-  message += `*Total: ${totalPrice} €*\n\n`;
-  message += `Merci pour votre commande !`;
+      message += `${index + 1}. *${item.brand}*\n`;
+      message += `   ${item.name}\n`;
+      message += `   Réf: ${item.id} | Taille: ${item.selectedSize}\n`;
+      message += `   Qté: ${item.quantity} x ${item.selectedPrice} = ${itemTotal} €\n\n`;
+    });
 
-  // Encoder le message pour l'URL
-  const encodedMessage = encodeURIComponent(message);
+    const totalPrice = cart
+      .reduce((total, item) => {
+        const price = parseFloat(item.selectedPrice.replace(' €', '').replace(',', '.'));
+        return total + price * item.quantity;
+      }, 0)
+      .toFixed(2)
+      .replace('.', ',');
 
-  // Numéro WhatsApp cible
-  const phoneNumber = '33651310577'; // +33651310577 sans le +
+    message += `*Total: ${totalPrice} €*\n\n`;
+    message += `Merci pour votre commande !`;
 
-  // Ouvrir WhatsApp avec le message pré-rempli
-  const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+    // Encoder le message pour l'URL
+    const encodedMessage = encodeURIComponent(message);
 
-  window.open(whatsappUrl, '_blank');
+    // Numéro WhatsApp cible
+    const phoneNumber = '33651310577'; // +33651310577 sans le +
+
+    // Ouvrir WhatsApp avec le message pré-rempli
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+
+    window.open(whatsappUrl, '_blank');
+  } catch (error) {
+    // L'utilisateur a fermé la popup sans confirmer
+    console.log('Commande annulée');
+  }
 }
 
 // Initialiser le gestionnaire de panier
