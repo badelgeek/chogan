@@ -1,6 +1,9 @@
 // --- 1. LECTURE DES DONNÉES DU FICHIER CSV ---
 let perfumeData = [];
 let productCardElements = []; // Store DOM elements for reuse
+let currentSearchQuery = '';
+let selectedNoteFilters = new Set();
+let availableNoteFilters = [];
 
 // Utility function for debouncing
 function debounce(func, wait) {
@@ -50,13 +53,14 @@ async function loadCSVData() {
       const originalName = obj.Nom ? obj.Nom.toLowerCase() : '';
       const originalBrand = obj[':'] ? obj[':'].toLowerCase() : '';
       const originalGamme = obj.Gamme ? capitalizeWords(obj.Gamme).toLowerCase() : '';
+      const originalNotes = obj.Notes ? obj.Notes.toLowerCase() : '';
       const transformedName = transformWord(obj.Nom || '').toLowerCase();
       const transformedBrand = transformWord((obj[':'] || '').toUpperCase()).toLowerCase();
       const transformedGamme = capitalizeWords(obj.Gamme || '').toLowerCase();
       const productNumber = obj['n°'] ? obj['n°'].toString() : '';
 
       // Build searchable text including sizes and prices
-      let searchableText = `${originalName} ${originalBrand} ${originalGamme} ${transformedName} ${transformedBrand} ${transformedGamme} ${productNumber}`;
+      let searchableText = `${originalName} ${originalBrand} ${originalGamme} ${originalNotes} ${transformedName} ${transformedBrand} ${transformedGamme} ${productNumber}`;
 
       // Add sizes and prices
       for (const key in obj) {
@@ -66,10 +70,12 @@ async function loadCSVData() {
       }
 
       obj.searchableText = searchableText;
+      obj.notesList = parseNotesList(obj.Notes);
 
       perfumeData.push(obj);
     }
 
+    initNotesFilters();
     renderProducts(); // Afficher les produits après chargement des données
   } catch (error) {
     console.error('Erreur lors du chargement du fichier CSV:', error);
@@ -160,6 +166,165 @@ function transformWord(word) {
     .join(' ');
 }
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function parseNotesList(notes) {
+  const cleanedNotes = (notes || '').trim();
+  if (!cleanedNotes) {
+    return [];
+  }
+
+  return cleanedNotes
+    .split(/\r?\n|;\s*|,\s*/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeNoteValue(note) {
+  return (note || '').trim().toLowerCase();
+}
+
+function initNotesFilters() {
+  const notesMap = new Map();
+
+  perfumeData.forEach((product) => {
+    const notesList = product.notesList || parseNotesList(product.Notes);
+    notesList.forEach((note) => {
+      const normalized = normalizeNoteValue(note);
+      if (normalized && !notesMap.has(normalized)) {
+        notesMap.set(normalized, note.trim());
+      }
+    });
+  });
+
+  availableNoteFilters = Array.from(notesMap.entries())
+    .sort((a, b) => a[1].localeCompare(b[1], 'fr', { sensitivity: 'base' }))
+    .map(([value, label]) => ({ value, label }));
+
+  buildNotesFilterList(new Map());
+  updateNotesFilterButtonState();
+}
+
+function buildNotesFilterList(noteCounts = new Map()) {
+  const notesFilterList = document.getElementById('notesFilterList');
+  if (!notesFilterList) return;
+
+  notesFilterList.innerHTML = availableNoteFilters
+    .map(
+      (note) => {
+        const count = noteCounts.get(note.value) || 0;
+        const isDisabled = count === 0 && !selectedNoteFilters.has(note.value);
+        return `
+        <label class="notes-filter-item ${isDisabled ? 'is-disabled' : ''}">
+          <input type="checkbox" value="${escapeHtml(note.value)}" ${selectedNoteFilters.has(note.value) ? 'checked' : ''} ${isDisabled ? 'disabled' : ''} />
+          <span>${escapeHtml(note.label)}</span>
+          <span class="note-count">${count}</span>
+        </label>
+      `;
+      },
+    )
+    .join('');
+}
+
+function getNoteCounts(products) {
+  const noteCounts = new Map();
+
+  availableNoteFilters.forEach((note) => {
+    noteCounts.set(note.value, 0);
+  });
+
+  products.forEach((product) => {
+    const notesList = product.notesList || parseNotesList(product.Notes);
+    notesList.forEach((note) => {
+      const normalized = normalizeNoteValue(note);
+      if (noteCounts.has(normalized)) {
+        noteCounts.set(normalized, noteCounts.get(normalized) + 1);
+      }
+    });
+  });
+
+  return noteCounts;
+}
+
+function updateNotesFilterButtonState() {
+  const toggleButton = document.getElementById('notesFilterToggle');
+  const countBadge = document.getElementById('notesFilterCount');
+
+  if (!toggleButton || !countBadge) return;
+
+  const selectedCount = selectedNoteFilters.size;
+  toggleButton.classList.toggle('active', selectedCount > 0);
+  countBadge.textContent = selectedCount.toString();
+  countBadge.style.display = selectedCount > 0 ? 'inline-flex' : 'none';
+}
+
+function getSelectedNotesFromUI() {
+  const notesFilterList = document.getElementById('notesFilterList');
+  if (!notesFilterList) return [];
+
+  return Array.from(notesFilterList.querySelectorAll('input[type="checkbox"]:checked')).map((input) =>
+    normalizeNoteValue(input.value),
+  );
+}
+
+function applyActiveFilters(product) {
+  if (currentFilter === 'Homme' && !(product.Type.includes('Homme') || product.Type.includes('Mixte'))) {
+    return false;
+  }
+
+  if (currentFilter === 'Femme' && !(product.Type.includes('Femme') || product.Type.includes('Mixte'))) {
+    return false;
+  }
+
+  if (currentSearchQuery && !(product.searchableText && product.searchableText.includes(currentSearchQuery))) {
+    return false;
+  }
+
+  if (selectedNoteFilters.size > 0) {
+    const productNotes = product.notesList || parseNotesList(product.Notes);
+    const normalizedProductNotes = productNotes.map((note) => normalizeNoteValue(note));
+    const matchesNoteFilter = Array.from(selectedNoteFilters).every((note) => normalizedProductNotes.includes(note));
+
+    if (!matchesNoteFilter) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function formatNotesMarkup(notes) {
+  const noteItems = parseNotesList(notes);
+  if (noteItems.length === 0) {
+    return '<p class="notes-empty">Aucune note disponible.</p>';
+  }
+
+  return `
+    <div class="notes-bars-popup">
+      ${noteItems
+        .map((item, index) => {
+          const palette = ['#eef4ff', '#dfeee8', '#c95b18', '#95521a', '#6c4320', '#aab7b5', '#6d463c', '#b58a1f', '#a69cab', '#a29b90'];
+          const width = Math.max(58, 100 - index * 7);
+          const backgroundColor = palette[index % palette.length];
+          const textColor = index <= 1 ? '#111' : '#f5f5f5';
+          return `
+            <div class="note-bar-popup" style="width:${width}%; background:${backgroundColor}; color:${textColor};">
+              <span>${escapeHtml(item)}</span>
+            </div>
+          `;
+        })
+        .join('')}
+    </div>
+  `;
+}
+
 const grid = document.getElementById('product-grid');
 const filterButtons = document.querySelectorAll('.filter-btn[data-filter]');
 const sortButtons = document.querySelectorAll('.sort-btn');
@@ -174,6 +339,7 @@ function createCardHTML(product) {
   // Gestion du Type pour le filtrage
   const isHomme = product.Type.includes('Homme') || product.Type.includes('Mixte');
   const isFemme = product.Type.includes('Femme') || product.Type.includes('Mixte');
+  const notesValue = product.Notes ? product.Notes.trim() : '';
 
   // Si l'image est manquante, affichez un placeholder
   const imageUrl =
@@ -256,6 +422,13 @@ function createCardHTML(product) {
   // Apply transformation to brand and product name only (not gamme)
   const transformedBrand = transformWord((product[':'] || 'N/A').toUpperCase());
   const transformedProductName = transformWord(productName);
+  const notesButtonHtml = notesValue
+    ? `
+      <button class="view-notes-btn" type="button" data-notes="${escapeHtml(notesValue)}" aria-label="Voir les notes du parfum">
+        <span class="material-icons">visibility</span>
+      </button>
+    `
+    : '';
 
   // HTML de la carte
   return `
@@ -264,18 +437,22 @@ function createCardHTML(product) {
                data-is-homme="${isHomme}"
                data-is-femme="${isFemme}"
                data-product-number="${product['n°']}"
-               data-brand="${product[':']}"
-               data-name="${product.Nom}"
-               data-gamme="${product.Gamme}"
-               data-image-url="${imageUrl}"
-               ${publicPrice100ml ? `data-public-price-100ml="${publicPrice100ml}"` : ''}>
+               data-brand="${escapeHtml(product[':'] || '')}"
+               data-name="${escapeHtml(product.Nom || '')}"
+               data-gamme="${escapeHtml(product.Gamme || '')}"
+               data-image-url="${escapeHtml(imageUrl)}"
+               data-notes="${escapeHtml(notesValue)}"
+               ${publicPrice100ml ? `data-public-price-100ml="${escapeHtml(publicPrice100ml)}"` : ''}>
 
               <div class="card-image-container">
                   <div class="product-number ${product.Type}">n° ${product['n°']}</div>
-                  <img src="${imageUrl}" alt="${transformedProductName}" class="card-image">
-                  <button class="add-to-cart-btn" data-product-number="${product['n°']}">
-                    <span class="material-icons">add</span>
-                  </button>
+                  <img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(transformedProductName)}" class="card-image">
+                  <div class="card-actions">
+                    <button class="add-to-cart-btn" type="button" data-product-number="${product['n°']}" aria-label="Ajouter au panier">
+                      <span class="material-icons">add</span>
+                    </button>
+                    ${notesButtonHtml}
+                  </div>
               </div>
 
               <div class="card-content">
@@ -502,6 +679,12 @@ function printCards() {
           padding: 10px;
           overflow: hidden;
           position: relative;
+        }
+
+        .card-actions,
+        .add-to-cart-btn,
+        .view-notes-btn {
+          display: none !important;
         }
 
         .card-image {
@@ -789,6 +972,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Ajouter la fonctionnalité de recherche
   const searchInput = document.querySelector('.search-input');
+  const notesFilterToggle = document.getElementById('notesFilterToggle');
+  const notesFilterPanel = document.getElementById('notesFilterPanel');
+  const notesFilterList = document.getElementById('notesFilterList');
+  const clearNotesFiltersBtn = document.getElementById('clearNotesFilters');
 
   if (searchInput) {
     // Recherche debounced pour éviter les appels trop fréquents
@@ -800,33 +987,63 @@ document.addEventListener('DOMContentLoaded', function () {
       debouncedSearch(this.value);
     });
   }
+
+  if (notesFilterToggle && notesFilterPanel) {
+    notesFilterToggle.addEventListener('click', function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      const isOpen = notesFilterPanel.classList.toggle('open');
+      notesFilterToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      notesFilterPanel.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+    });
+  }
+
+  if (notesFilterList) {
+    notesFilterList.addEventListener('change', function () {
+      selectedNoteFilters = new Set(getSelectedNotesFromUI());
+      updateNotesFilterButtonState();
+      renderProducts();
+    });
+  }
+
+  if (clearNotesFiltersBtn) {
+    clearNotesFiltersBtn.addEventListener('click', function () {
+      selectedNoteFilters.clear();
+      if (notesFilterList) {
+        notesFilterList.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+          checkbox.checked = false;
+        });
+      }
+      updateNotesFilterButtonState();
+      renderProducts();
+    });
+  }
+
+  document.addEventListener('click', function (event) {
+    if (!notesFilterPanel || !notesFilterToggle) return;
+    const clickedInside = notesFilterPanel.contains(event.target) || notesFilterToggle.contains(event.target);
+    if (!clickedInside) {
+      notesFilterPanel.classList.remove('open');
+      notesFilterPanel.setAttribute('aria-hidden', 'true');
+      notesFilterToggle.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && notesFilterPanel) {
+      notesFilterPanel.classList.remove('open');
+      if (notesFilterToggle) {
+        notesFilterToggle.setAttribute('aria-expanded', 'false');
+      }
+      notesFilterPanel.setAttribute('aria-hidden', 'true');
+    }
+  });
 });
 
 // Fonction de recherche
 function performSearch(query) {
-  query = query.toLowerCase().trim();
-
-  // Si la recherche est vide, afficher tous les produits
-  if (!query) {
-    renderProducts();
-    return;
-  }
-
-  // Filtrer les produits en fonction de la recherche en utilisant le texte précalculé
-  const filteredData = perfumeData.filter((product) => {
-    return product.searchableText && product.searchableText.includes(query);
-  });
-
-  // Appliquer le filtre actuel aussi (Homme/Femme/All)
-  const finalFilteredData = filteredData.filter((product) => {
-    if (currentFilter === 'all') return true;
-    if (currentFilter === 'Homme') return product.Type.includes('Homme') || product.Type.includes('Mixte');
-    if (currentFilter === 'Femme') return product.Type.includes('Femme') || product.Type.includes('Mixte');
-    return false;
-  });
-
-  // Afficher les produits filtrés en utilisant renderProducts
-  renderProducts(finalFilteredData);
+  currentSearchQuery = query.toLowerCase().trim();
+  renderProducts();
 }
 
 // Fonction pour attacher les événements d'ajout au panier
@@ -916,8 +1133,66 @@ function attachAddToCartEvents() {
         // Mettre à jour la mise en évidence de la carte
         updateCardHighlight(productCard, product['n°'], product.selectedSize);
       }
+      return;
+    }
+
+    if (e.target.closest('.view-notes-btn')) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const notesButton = e.target.closest('.view-notes-btn');
+      const productCard = notesButton.closest('.product-card');
+      openNotesPopup(productCard, notesButton.getAttribute('data-notes'));
     }
   });
+}
+
+function openNotesPopup(productCard, notesFromButton = '') {
+  const popup = document.getElementById('notesPopup');
+  const popupTitle = document.getElementById('notesPopupTitle');
+  const popupBrand = document.getElementById('notesPopupBrand');
+  const popupImage = document.getElementById('notesPopupImage');
+  const popupNotes = document.getElementById('notesPopupNotes');
+  const closeBtn = document.getElementById('closeNotesPopup');
+
+  if (!popup || !popupTitle || !popupBrand || !popupImage || !popupNotes) {
+    return;
+  }
+
+  const productName = productCard.getAttribute('data-name') || 'Parfum';
+  const brandName = productCard.getAttribute('data-brand') || '';
+  const imageUrl = productCard.getAttribute('data-image-url') || '';
+  const notes = notesFromButton || productCard.getAttribute('data-notes') || '';
+
+  popupTitle.textContent = transformWord(capitalizeWords(productName));
+  popupBrand.textContent = brandName ? transformWord(brandName.toUpperCase()) : '';
+  popupImage.src = imageUrl;
+  popupImage.alt = productName;
+  popupNotes.innerHTML = formatNotesMarkup(notes);
+  popup.classList.add('show');
+
+  if (closeBtn && !closeBtn.dataset.notesBound) {
+    closeBtn.addEventListener('click', () => {
+      popup.classList.remove('show');
+    });
+    closeBtn.dataset.notesBound = 'true';
+  }
+
+  if (!popup.dataset.notesBound) {
+    popup.addEventListener('click', function (event) {
+      if (event.target === popup) {
+        popup.classList.remove('show');
+      }
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        popup.classList.remove('show');
+      }
+    });
+
+    popup.dataset.notesBound = 'true';
+  }
 }
 
 // Fonction pour animer l'ajout au panier
@@ -991,12 +1266,9 @@ function updateAllCardsHighlight() {
 function renderProducts(filteredData = null) {
   // Si aucun filteredData n'est passé, utiliser tous les produits
   if (filteredData === null) {
-    filteredData = perfumeData.filter((product) => {
-      if (currentFilter === 'all') return true;
-      if (currentFilter === 'Homme') return product.Type.includes('Homme') || product.Type.includes('Mixte');
-      if (currentFilter === 'Femme') return product.Type.includes('Femme') || product.Type.includes('Mixte');
-      return false;
-    });
+    filteredData = perfumeData.filter((product) => applyActiveFilters(product));
+  } else {
+    filteredData = filteredData.filter((product) => applyActiveFilters(product));
   }
 
   // Créer les éléments DOM une seule fois si nécessaire
@@ -1041,6 +1313,9 @@ function renderProducts(filteredData = null) {
       grid.appendChild(cardItem.element);
     }
   });
+
+  buildNotesFilterList(getNoteCounts(filteredData));
+  updateNotesFilterButtonState();
 
   // Attacher les événements de sélection de taille après le rendu
   setTimeout(() => {
